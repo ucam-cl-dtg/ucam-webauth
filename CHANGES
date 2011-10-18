@@ -1,0 +1,101 @@
+University of Cambridge Web Authentication System Java Toolkit
+
+                                 CHANGELOG
+
+$Id: CHANGES,v 1.7 2005/09/19 09:11:14 jw35 Exp $
+
+0.6-20051129 JW
+
+* Made WebauthRequest Serializable since there is a good chance many
+  applications will want to keep the object around to use to validate
+  a coresponding WebauthResponse
+
+0.5-20050728 JW
+
+* Corrected a bug (similar to that in 0.4) that caused request
+  timestamps to be interpreted as if in localtime not UT. Extended
+  test suite to catch this
+
+0.4-20050331 JW
+
+* Corrected a bug that caused response timestamps to be interpreted as
+  if in localtime not UT. Extended test suite to catch this
+
+* Modified date format in error messages to be more readable and
+  include time zone. 
+
+0.3-20050330 JW
+
+* Significant re-working, including numerous incompatible changes to
+  the API (sorry). Generally:
+
+  + The dedicated get...()/set...() methods from WebauthRequest and
+    WebauthResponse have been replaced by generic methods that take
+    the name of a field to act on as their first argument.
+
+  + get() always returns a String, but there are convenience methods
+    (getInt(), getDate() and getColl() ) that return fields as an int,
+    a date, or as a Collection. These throw exceptions if the required
+    convertion isn't possible.
+
+  + set() is overloaded to accept a String, an int, a date, or a
+    Collection as the value to set.
+
+  + getColl() and set() with a Collection argument can be used to
+    handle list-based fields (such as 'aauth' in requests and 'sso' in
+    responses) as a Collection of Strings.
+
+  + WebauthRequest and WebauthResponse now have methods that return the
+    number of fields that they contain, and a iterator to access them
+    all.
+
+  + WebauthResponse no-longer implements java.lang.Principal. As a
+    result toString() now returns a human-readable summary of the
+    entire object. toFullString() is gone.
+
+  + WebauthRequest and WebauthResponse now generally DON'T throw
+    exceptions (except as mentioned above under convenience
+    methods. As a result they both now do less validity checking then
+    they did.
+
+  + Dates are now uniformly represented as a long containing the
+    number of milliseconds since January 1, 1970 GMT throughout.
+
+* WebauthResponse.statusString() now accepts an int or a String
+  argument.
+ 
+* WebauthValidator checks that a status 200 response includes one of
+  the 'auth' or 'sso' fields.
+
+0.2-20050321 JW
+
+* Added this file and TODO
+
+* Added notes to README about the need for a security provider that
+  implements the "SHA1withRSA" signature scheme, and the current use
+  of sun.misc.BASE64Decoder
+
+* Reworked (and commented!) timeout checking and get/set methods for
+  Timeout and MaxSkew to cope with millisecond time resolution in Java
+  but only second time resolution in response messages.
+
+* Dropped use of URLEncoder.encode(String,String) in favour of
+  'URLEncoder.encode(String)' since the former isn't present in
+  1.3. Code now compiles and passes its tests in Java 1.3 (1.3.1_15),
+  1.4 (1.4.2_07) and 5 (1.5.0_12)
+
+* Added text from causal exception to "Failed to parse Webauth
+  response issue date" and "Failed to parse Webauth response URL"
+  messages. Can't use exception chaining becasue it's >=1.4 only.
+
+* WebauthRequestTest and WebauthResponseTest reworked to use http:
+  (rather than https:) URLs becasue 1.3 doesn't support https: out of
+  the box.
+
+* Moved the constants (STATUS_SUCCESS, etc) and the one remaining
+  static method (statusString) from the Webauth class into
+  WebauthResponse where they belong. Removed the Webauth class.
+
+0.1-20050316 JW
+
+* Initial release

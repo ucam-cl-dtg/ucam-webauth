@@ -1,0 +1,97 @@
+The University of Cambridge Web Authentication System Java Toolkit 
+==================================================================
+
+This toolkit provides assorted classes implementing functionality
+associated with the University of Cambridge's Web Authentication
+System (UcamWebAuth). UcamWebAuth is the software that implements the
+University of Cambridge's 'Raven' system.
+
+Current content of the package includes classes representing
+authentication requests and responses (WebauthRequest and
+WebauthResponse respectively), and a class for validating response
+messages (WebauthValidator).
+
+The Toolkit is intended to be compatible with Java 1.3 and above.
+
+
+The Latest Version
+------------------
+
+See <http://raven.cam.ac.uk/project/java-toolkit/>
+
+
+Installation
+------------
+
+A JAR file is provided containing the classes from this toolkit
+ready-compiled. These can be made available to any Java program by
+including the JAR file in the CLASSPATH. 
+
+WebauthValidator needs access to a Java Cryptography Extension (JCE)
+security provider that implements the "SHA1withRSA" signature
+scheme. This appears to be the case by default from at least Sun's
+J2SE 1.3.  Failing that, Sun's JCE reference implementation from
+http://java.sun.com/products/jce/ or Bouncycastle's JCE implementation
+from http://www.bouncycastle.org/ may be of use.
+
+The current implementation of WebauthDecoder uses
+sun.misc.BASE64Decoder and so will only work in Java VMs that have
+this available. Rewriting this class to remove this dependency is on
+the TODO list.
+
+
+Documentation
+-------------
+
+Documentation is provided in the form of 'javadoc' files. Point a web
+browser at javadoc/index.html.
+
+
+Building
+--------
+
+The Maven tool <http://maven.apache.org/> is needed to rebuild the
+toolkit. Assuming Maven is installed somewhere on PATH, the toolkit can
+be rebuilt by executing the command
+
+  maven compile 
+
+from the root of the unpacked distribution. This will place the
+freshly-compiled class files beneath the directory 'target/classes'. Other Maven
+goals will run the provided JUnit tests, rebuild the JAR file and
+rebuild the distribution jar files.
+
+Some deprecation and other warnings can be expected when the toolkit
+is compiled under versions of Java later than 1.3 due to the need to
+maintain backwards compatibility.
+
+
+Questions
+---------
+
+Questions about the use of this toolkit should be addressed to
+<raven-support@ucs.cam.ac.uk>. See also the pages at
+<http://raven.cam.ac.uk/project/>
+
+
+Licencing
+---------
+
+Copyright (c) University of Cambridge 2005
+
+This toolkit is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of the
+License, or (at your option) any later version. 
+
+The toolkit is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this toolkit; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+USA
+
+See the file COPYING for details.
