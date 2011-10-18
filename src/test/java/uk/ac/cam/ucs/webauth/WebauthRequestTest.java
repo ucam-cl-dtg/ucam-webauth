@@ -24,16 +24,12 @@
 
 package uk.ac.cam.ucs.webauth;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.SimpleTimeZone;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
 
 import junit.framework.TestCase;
 

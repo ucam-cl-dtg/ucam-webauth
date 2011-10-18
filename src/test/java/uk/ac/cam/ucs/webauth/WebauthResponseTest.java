@@ -25,12 +25,10 @@
 package uk.ac.cam.ucs.webauth;
 
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.SimpleTimeZone;
-import junit.framework.TestCase;
 
-import uk.ac.cam.ucs.webauth.WebauthException;
+import junit.framework.TestCase;
 
 public class WebauthResponseTest extends TestCase {
 

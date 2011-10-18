@@ -25,20 +25,17 @@
 package uk.ac.cam.ucs.webauth;
 
 import java.io.IOException;
-import java.security.cert.Certificate;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.cert.Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-
-import uk.ac.cam.ucs.webauth.WebauthException;
-import uk.ac.cam.ucs.webauth.WebauthDecoder;
 
 /**
  * Implements a validator for authentication response message.

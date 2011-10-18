@@ -24,26 +24,16 @@
 
 package uk.ac.cam.ucs.webauth;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.lang.Boolean;
+import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.cert.CertificateException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException; 
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.HashSet;
 
 import junit.framework.TestCase;
-
-import uk.ac.cam.ucs.webauth.WebauthRequest;
-import uk.ac.cam.ucs.webauth.WebauthResponse;
-import uk.ac.cam.ucs.webauth.WebauthValidator;
-import uk.ac.cam.ucs.webauth.WebauthException;
 
 public class WebauthValidatorTest extends TestCase {
 

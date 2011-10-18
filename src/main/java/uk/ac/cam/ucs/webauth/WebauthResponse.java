@@ -27,12 +27,10 @@ import java.net.URLDecoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.HashSet;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.TimeZone;
-
-import uk.ac.cam.ucs.webauth.WebauthException;
 
 /**
  * Represents an authentication response message.

@@ -34,6 +34,13 @@ package uk.ac.cam.ucs.webauth;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -45,21 +52,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import uk.ac.cam.ucs.webauth.WebauthException;
-import uk.ac.cam.ucs.webauth.WebauthRequest;
-import uk.ac.cam.ucs.webauth.WebauthResponse;
-import uk.ac.cam.ucs.webauth.WebauthValidator;
 
 /**
  * A Servlet Filter which ensures a user is Raven authenticated.
