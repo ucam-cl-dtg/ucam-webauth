@@ -26,10 +26,7 @@ package uk.ac.cam.ucs.webauth;
 
 import java.io.IOException;
 
-import sun.misc.BASE64Decoder;   
-                       // **fixme** remove sun.misc dependency
-                       // e.g. http://ostermiller.org/utils/Base64.java.html
-                       // http://www.geocities.com/herong_yang/data/base64.html
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * Implements a decoder for encoded binary strings as used by the
@@ -77,10 +74,8 @@ public class WebauthDecoder {
 	    }
 	    buff.append(c);
 	}
-	
-	BASE64Decoder decoder = new BASE64Decoder();
-	return decoder.decodeBuffer(buff.toString());
-	
+
+	return Base64.decodeBase64(buff.toString());
     }
  
 }

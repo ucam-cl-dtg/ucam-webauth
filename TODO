@@ -4,8 +4,6 @@ University of Cambridge Web Authentication System Java Toolkit
 
 $Id: TODO,v 1.2 2005/03/30 14:26:40 jw35 Exp $
 
-* Remove dependancy on sun.misc.BASE64Decoder
-
 * Use the toolkit to re-impliment the CARET Tomcat authenticator (see
   http://forge.caret.cam.ac.uk/projects/raven/). Note that this
   aproach to authentication only applies to Tomcat
