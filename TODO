@@ -4,14 +4,8 @@ University of Cambridge Web Authentication System Java Toolkit
 
 $Id: TODO,v 1.2 2005/03/30 14:26:40 jw35 Exp $
 
-* Use the toolkit to re-impliment the CARET Tomcat authenticator (see
+* Use the toolkit to re-implement the CARET Tomcat authenticator (see
   http://forge.caret.cam.ac.uk/projects/raven/). Note that this
-  aproach to authentication only applies to Tomcat
-
-* Use the toolkit to impliment a servlet filter that will enforce
-  Raven authentication. While this couldn't integrate with the servlet
-  container as well as the Tomcat authenticator, filters are a
-  standard part of the servlet spec so the result should be portable
-  to other servlet containers.
+  approach to authentication only applies to Tomcat
 
 * Remove duplication of split() (in WebauthRequest and in WebauthResponse)
