@@ -215,6 +215,7 @@ public class RavenFilter implements Filter
 
     protected WebauthValidator webauthValidator = null;
 
+    @Override
     public void init(FilterConfig config) throws ServletException
     {
         // check if a different authenticate page is configured.
@@ -307,6 +308,7 @@ public class RavenFilter implements Filter
      * 
      * @see javax.servlet.Filter#destroy()
      */
+    @Override
     public void destroy()
     {
     }
@@ -317,6 +319,7 @@ public class RavenFilter implements Filter
      * @see javax.servlet.Filter#doFilter(javax.servlet.ServletRequest,
      *      javax.servlet.ServletResponse, javax.servlet.FilterChain)
      */
+    @Override
     public void doFilter(ServletRequest servletReq, ServletResponse servletResp, FilterChain chain)
             throws IOException, ServletException
     {
@@ -459,11 +462,13 @@ public class RavenFilter implements Filter
             this.name = name;
         }
 
+        @Override
         public String getName()
         {
             return name;
         }
 
+        @Override
         public String toString()
         {
             return "RavenPrincipal--" + name;
@@ -506,6 +511,7 @@ public class RavenFilter implements Filter
             this.params = params;
         }
 
+        @Override
         public String toString()
         {
             StringBuilder sb = new StringBuilder();

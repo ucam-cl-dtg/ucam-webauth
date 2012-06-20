@@ -30,7 +30,9 @@ package uk.ac.cam.ucs.webauth;
  * @version $Revision: 1.2 $ $Date: 2005/03/30 13:17:06 $
  */
 public class WebauthException extends Exception {
-	
+
+  private static final long serialVersionUID = 1L;
+
     /**
      * Default constrictor
      */

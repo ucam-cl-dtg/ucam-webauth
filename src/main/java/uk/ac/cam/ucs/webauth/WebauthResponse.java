@@ -342,6 +342,7 @@ public class WebauthResponse {
      * @return string representation of this response
      */  
     
+    @Override
     public String toString() {
 	StringBuffer str = new StringBuffer("Webauth response: ");
 	for (int i=0; i<FIELD_NAME.length; ++i) {
