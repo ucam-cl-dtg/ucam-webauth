@@ -29,6 +29,11 @@
   <artifactId>webauth</artifactId>
   <version>0.7.0-SNAPSHOT</version>
   <name>RavenFilter</name>
+  <scm>
+    <connection>scm:git:git://github.com/ucam-cl-dtg/ucam-webauth.git</connection>
+    <developerConnection>scm:git:git@github.com:ucam-cl-dtg/ucam-webauth.git</developerConnection>
+    <url>https://github.com/ucam-cl-dtg/ucam-webauth</url>
+  </scm>
   <licenses>
     <license>
       <name>LGPL 2.1 license</name>
