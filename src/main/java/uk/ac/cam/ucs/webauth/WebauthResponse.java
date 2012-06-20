@@ -182,7 +182,7 @@ public class WebauthResponse {
 
     public WebauthResponse(String token) {
 
-	String[] value = split(RESPONSE_SEP,token);
+	String[] value = Util.split(RESPONSE_SEP,token);
 
 	// Note: the deprecated (since 1.4) URLEncoder.encode(String)
 	// form is used here for 1.3 compatibility. Should really be
@@ -315,7 +315,7 @@ public class WebauthResponse {
 
     public Collection getColl(String field) {
 	HashSet set = new HashSet();
-	String[] tokens = split(',',get(field));
+	String[] tokens = Util.split(',',get(field));
         for (int i = 0; i < tokens.length; ++i) {
             set.add(tokens[i].trim());
 	}
@@ -350,34 +350,6 @@ public class WebauthResponse {
 	    str.append(FIELD_NAME[i] + ": " + get(FIELD_NAME[i])); 
 	}
 	return str.toString();
-    }
-
-    /* private utility methods */
-
-    private String[] split(char delim, String text) {
-
-        if (text.length() == 0) 
-	    return new String[0];
-	
-	int nFields = 0;
-	for (int pos=0; pos < text.length(); ++pos)
-	    if (text.charAt(pos) == delim)
-		++nFields;
-	String[] list = new String[nFields+1];
-
-	int toIndex = 0;
-	int fromIndex = 0;
-	int ctr = 0;
-	
-	while (fromIndex <= text.length()) {
-	    toIndex = text.indexOf(delim,fromIndex);
-	    if (toIndex == -1) toIndex = text.length();
-	    list[ctr++] = text.substring(fromIndex,toIndex);
-	    fromIndex = toIndex+1;
-	}
-
-	return list;
-
     }
 
 }
