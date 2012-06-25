@@ -66,8 +66,8 @@ import org.apache.commons.logging.LogFactory;
  * 
  * <h3>Install the Raven public key certificate</h3>
  * Download the Raven public key certificate from the <a
- * href="https://raven.cam.ac.uk/project/">Raven Project page</a>. Install into your web
- * application at <code>/WEB-INF/raven/pubkey2.crt</code>.
+ * href="https://raven.cam.ac.uk/project/">Raven Project page</a>. Install into
+ * your web application at <code>/WEB-INF/raven/pubkey2.crt</code>.
  * 
  * <h3>Configure web.xml</h3>
  * Add a filter definition:
@@ -76,7 +76,7 @@ import org.apache.commons.logging.LogFactory;
  *  &lt;filter&gt;
  *      &lt;filter-name&gt;ravenFilter&lt;/filter-name&gt;
  *      &lt;filter-class&gt;uk.ac.cam.ucs.webauth.RavenFilter&lt;/filter-class&gt;
- *  &lt;/filter&gt; 
+ *  &lt;/filter&gt;
  * </pre>
  * 
  * Add one or more filter-mapping's for your application. Eg:
@@ -85,7 +85,7 @@ import org.apache.commons.logging.LogFactory;
  *  &lt;filter-mapping&gt;
  *      &lt;filter-name&gt;ravenFilter&lt;/filter-name&gt;
  *      &lt;url-pattern&gt;/private&lt;/url-pattern&gt;
- *  &lt;/filter-mapping&gt; 
+ *  &lt;/filter-mapping&gt;
  * </pre>
  * 
  * <h3>Retrieve authenticated user name</h3>
@@ -117,13 +117,14 @@ import org.apache.commons.logging.LogFactory;
  * <td>/WEB-INF/raven/pubkey2.crt</td>
  * <td>Optional</td>
  * </tr>
- * </table><br/>
+ * </table>
+ * <br/>
  * 
  * <h3>Error Codes</h3>
  * 
- * Use the following example entries for your web.xml if you wish to provide your own error pages.
- * The codes below are those given by WebauthResponse and passed on by RavenFilter to the servlet
- * container.
+ * Use the following example entries for your web.xml if you wish to provide
+ * your own error pages. The codes below are those given by WebauthResponse and
+ * passed on by RavenFilter to the servlet container.
  * 
  * <pre>
  *  &lt;!-- 
@@ -149,392 +150,403 @@ import org.apache.commons.logging.LogFactory;
  *  &lt;error-page&gt;&lt;error-code&gt;560&lt;/error-code&gt;&lt;location&gt;/ravenError.jsp&lt;/location&gt;&lt;/error-page&gt; 
  * 
  *  &lt;!-- Operation declined by the authentication service --&gt;
- *  &lt;error-page&gt;&lt;error-code&gt;570&lt;/error-code&gt;&lt;location&gt;/ravenError.jsp&lt;/location&gt;&lt;/error-page&gt; 
+ *  &lt;error-page&gt;&lt;error-code&gt;570&lt;/error-code&gt;&lt;location&gt;/ravenError.jsp&lt;/location&gt;&lt;/error-page&gt;
  * </pre>
  * 
  * @author whb21 William Billingsley (whb21 at cam.ac.uk)
  * @author pms52 Philip Shore
  * 
  * @version 1
- * @see <a href="https://raven.cam.ac.uk/project/waa2wls-protocol.txt">The Cambridge Web
- *      Authentication System: WAA->WLS communication protocol</a>
+ * @see <a href="https://raven.cam.ac.uk/project/waa2wls-protocol.txt">The
+ *      Cambridge Web Authentication System: WAA->WLS communication protocol</a>
  * 
  */
-public class RavenFilter implements Filter
-{
-    static Log log = LogFactory.getLog(RavenFilter.class);
+public class RavenFilter implements Filter {
+	static Log log = LogFactory.getLog(RavenFilter.class);
 
-    /** The request parameter name, if present, indicates a WLS Reponse that should be validated. */
-    public static final String WLS_RESPONSE_PARAM = "WLS-Response";
+	/**
+	 * The request parameter name, if present, indicates a WLS Reponse that
+	 * should be validated.
+	 */
+	public static final String WLS_RESPONSE_PARAM = "WLS-Response";
 
-    /** The session attribute name of the Raven WebauthRequest object */
-    static final String SESS_RAVEN_REQ_KEY = "RavenReq";
+	/** The session attribute name of the Raven WebauthRequest object */
+	static final String SESS_RAVEN_REQ_KEY = "RavenReq";
 
-    /**
-     * The session attribute name of the RavenState object. This object additionally contains the
-     * Principal used to identify the authenticated user.
-     */
-    static final String SESS_STORED_STATE_KEY = "RavenState";
+	/**
+	 * The session attribute name of the RavenState object. This object
+	 * additionally contains the Principal used to identify the authenticated
+	 * user.
+	 */
+	static final String SESS_STORED_STATE_KEY = "RavenState";
 
-    /** The name of the request and session attribute containing the authenticated user. */
-    public static String ATTR_REMOTE_USER = "RavenRemoteUser";
+	/**
+	 * The name of the request and session attribute containing the
+	 * authenticated user.
+	 */
+	public static String ATTR_REMOTE_USER = "RavenRemoteUser";
 
-    /** The default location of the raven public key certificate, relative to the web application */
-    static final String DEFAULT_CERTIFICATE_PATH = "/WEB-INF/raven/pubkey2.crt";
+	/**
+	 * The default location of the raven public key certificate, relative to the
+	 * web application
+	 */
+	static final String DEFAULT_CERTIFICATE_PATH = "/WEB-INF/raven/pubkey2.crt";
 
-    /** This is the default name for the raven public key */
-    public static final String DEFAULT_KEYNAME = "webauth-pubkey2";
+	/** This is the default name for the raven public key */
+	public static final String DEFAULT_KEYNAME = "webauth-pubkey2";
 
-    /** The real path of the public key calculated from the cert init param */
-    private String sCertRealPath = null;
+	/** The real path of the public key calculated from the cert init param */
+	private String sCertRealPath = null;
 
-    /**
-     * The filter init-param param-name of the url to authenticate against. Optional. Defaults to
-     * https://raven.cam.ac.uk/auth/authenticate.html
-     */
-    public static String INIT_PARAM_AUTHENTICATE_URL = "authenticateUrl";
+	/**
+	 * The filter init-param param-name of the url to authenticate against.
+	 * Optional. Defaults to https://raven.cam.ac.uk/auth/authenticate.html
+	 */
+	public static String INIT_PARAM_AUTHENTICATE_URL = "authenticateUrl";
 
-    /**
-     * The filter init-param param-name path to the certificate. Optional. Defaults to
-     * /WEB-INF/raven/pubkey2.crt
-     */
-    public static String INIT_PARAM_CERTIFICATE_PATH = "certificatePath";
+	/**
+	 * The filter init-param param-name path to the certificate. Optional.
+	 * Defaults to /WEB-INF/raven/pubkey2.crt
+	 */
+	public static String INIT_PARAM_CERTIFICATE_PATH = "certificatePath";
 
-    /**
-     * The url of the raven authenticate page. Optional.
-     * 
-     * Defaults to https://raven.cam.ac.uk/auth/authenticate.html
-     * 
-     * Use https://raven.cam.ac.uk/auth/authenticate.html or
-     * https://demo.raven.cam.ac.uk/auth/authenticate.html
-     */
-    private String sRavenAuthenticatePage = "https://raven.cam.ac.uk/auth/authenticate.html";
+	/**
+	 * The filter init-param param-name to indicate if the filter should be run
+	 * in testing mode. In this mode all requests are automatically
+	 * authenticated as the test user. Defaults to false
+	 */
+	public static String INIT_PARAM_TESTING_MODE = "testingMode";
 
-    /** KeyStore used by WebauthValidator class */
-    protected KeyStore keyStore = null;
+	/**
+	 * The url of the raven authenticate page. Optional.
+	 * 
+	 * Defaults to https://raven.cam.ac.uk/auth/authenticate.html
+	 * 
+	 * Use https://raven.cam.ac.uk/auth/authenticate.html or
+	 * https://demo.raven.cam.ac.uk/auth/authenticate.html
+	 */
+	private String sRavenAuthenticatePage = "https://raven.cam.ac.uk/auth/authenticate.html";
 
-    protected WebauthValidator webauthValidator = null;
+	/** KeyStore used by WebauthValidator class */
+	protected KeyStore keyStore = null;
 
-    @Override
-    public void init(FilterConfig config) throws ServletException
-    {
-        // check if a different authenticate page is configured.
-        // eg https://demo.raven.cam.ac.uk/auth/authenticate.html
-        String authenticatePage = config.getInitParameter(INIT_PARAM_AUTHENTICATE_URL);
-        if (authenticatePage != null)
-            sRavenAuthenticatePage = authenticatePage;
+	protected WebauthValidator webauthValidator = null;
 
-        // get the path to the raven certificate or use a default
-        String sCertContextPath = config.getInitParameter(INIT_PARAM_CERTIFICATE_PATH);
-        if (sCertContextPath == null)
-            sCertContextPath = DEFAULT_CERTIFICATE_PATH;
+	protected boolean testingMode = false;
+	
+	@Override
+	public void init(FilterConfig config) throws ServletException {
+		// check if a different authenticate page is configured.
+		// eg https://demo.raven.cam.ac.uk/auth/authenticate.html
+		String authenticatePage = config
+				.getInitParameter(INIT_PARAM_AUTHENTICATE_URL);
+		if (authenticatePage != null)
+			sRavenAuthenticatePage = authenticatePage;
 
-        // calculate real path from web app relative version
-        sCertRealPath = config.getServletContext().getRealPath(sCertContextPath);
-        log.debug("Certificate will be loaded from: " + sCertRealPath);
+		// get the path to the raven certificate or use a default
+		String sCertContextPath = config
+				.getInitParameter(INIT_PARAM_CERTIFICATE_PATH);
+		if (sCertContextPath == null)
+			sCertContextPath = DEFAULT_CERTIFICATE_PATH;
+		// calculate real path from web app relative version
+		sCertRealPath = config.getServletContext()
+				.getRealPath(sCertContextPath);
+		log.debug("Certificate will be loaded from: " + sCertRealPath);
 
-        // ensure KeyStore is initialised.
-        keyStore = getKeyStore();
+		// ensure KeyStore is initialised.
+		keyStore = getKeyStore();
 
-        // ensure WebauthValidator is initialised.
-        webauthValidator = getWebauthValidator();
-    }
+		// ensure WebauthValidator is initialised.
+		webauthValidator = getWebauthValidator();
+		
+		String sTestingMode = config.getInitParameter(INIT_PARAM_TESTING_MODE);
+		testingMode = "true".equals(sTestingMode);
+	}
 
-    /**
-     * Gets a KeyStore and initialises if necessary.
-     * 
-     * The caller should ensure the KeyStore is persisted to a safe place.
-     * 
-     * @return An initialised KeyStore
-     */
-    protected KeyStore getKeyStore()
-    {
-        // init a new keystore with the Raven certificate,
-        KeyStore keyStore;
-        try
-        {
-            keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(null, new char[] {}); // Null InputStream, no password
-            CertificateFactory factory = CertificateFactory.getInstance("X.509");
-            Certificate cert = factory.generateCertificate(new FileInputStream(sCertRealPath));
-            keyStore.setCertificateEntry(DEFAULT_KEYNAME, cert);
-        }
-        catch (KeyStoreException e)
-        {
-            log.error("Unable to setup KeyStore", e);
-            throw new RuntimeException(e);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            log.error("Unable to find crypto algorithm.", e);
-            throw new RuntimeException(e);
-        }
-        catch (CertificateException e)
-        {
-            log.error("Unable to load certificate.", e);
-            throw new RuntimeException(e);
-        }
-        catch (FileNotFoundException e)
-        {
-            log.error("Unable to load certificate file: " + sCertRealPath, e);
-            throw new RuntimeException(e);
-        }
-        catch (IOException e)
-        {
-            log.error("General IO problem.  Unable to initialised filter.", e);
-            throw new RuntimeException(e);
-        }
+	/**
+	 * Gets a KeyStore and initialises if necessary.
+	 * 
+	 * The caller should ensure the KeyStore is persisted to a safe place.
+	 * 
+	 * @return An initialised KeyStore
+	 */
+	protected KeyStore getKeyStore() {
+		// init a new keystore with the Raven certificate,
+		KeyStore keyStore;
+		try {
+			keyStore = KeyStore.getInstance("JKS");
+			keyStore.load(null, new char[] {}); // Null InputStream, no password
+			CertificateFactory factory = CertificateFactory
+					.getInstance("X.509");
+			Certificate cert = factory.generateCertificate(new FileInputStream(
+					sCertRealPath));
+			keyStore.setCertificateEntry(DEFAULT_KEYNAME, cert);
+		} catch (KeyStoreException e) {
+			log.error("Unable to setup KeyStore", e);
+			throw new RuntimeException(e);
+		} catch (NoSuchAlgorithmException e) {
+			log.error("Unable to find crypto algorithm.", e);
+			throw new RuntimeException(e);
+		} catch (CertificateException e) {
+			log.error("Unable to load certificate.", e);
+			throw new RuntimeException(e);
+		} catch (FileNotFoundException e) {
+			log.error("Unable to load certificate file: " + sCertRealPath, e);
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			log.error("General IO problem.  Unable to initialised filter.", e);
+			throw new RuntimeException(e);
+		}
 
-        return keyStore;
+		return keyStore;
 
-    }
+	}
 
-    /**
-     * Gets a WebauthValidator and initialises if necessary.
-     * 
-     * @return
-     */
-    protected WebauthValidator getWebauthValidator()
-    {
-        if (webauthValidator == null)
-        {
-            webauthValidator = new WebauthValidator(getKeyStore());
-        }
-        return webauthValidator;
-    }
+	/**
+	 * Gets a WebauthValidator and initialises if necessary.
+	 * 
+	 * @return
+	 */
+	protected WebauthValidator getWebauthValidator() {
+		if (webauthValidator == null) {
+			webauthValidator = new WebauthValidator(getKeyStore());
+		}
+		return webauthValidator;
+	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.servlet.Filter#destroy()
-     */
-    @Override
-    public void destroy()
-    {
-    }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see javax.servlet.Filter#destroy()
+	 */
+	@Override
+	public void destroy() {
+	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.servlet.Filter#doFilter(javax.servlet.ServletRequest,
-     *      javax.servlet.ServletResponse, javax.servlet.FilterChain)
-     */
-    @Override
-    public void doFilter(ServletRequest servletReq, ServletResponse servletResp, FilterChain chain)
-            throws IOException, ServletException
-    {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see javax.servlet.Filter#doFilter(javax.servlet.ServletRequest,
+	 * javax.servlet.ServletResponse, javax.servlet.FilterChain)
+	 */
+	@Override
+	public void doFilter(ServletRequest servletReq,
+			ServletResponse servletResp, FilterChain chain) throws IOException,
+			ServletException {
 
-        // Only process http requests.
-        if ((servletReq instanceof HttpServletRequest) == false)
-        {
-            String msg = "Configuration Error.  RavenFilter can only handle Http requests. The rest of the filter chain will NOT be processed.";
-            log.error(msg);
-            return;
-        }
+		// Only process http requests.
+		if ((servletReq instanceof HttpServletRequest) == false) {
+			String msg = "Configuration Error.  RavenFilter can only handle Http requests. The rest of the filter chain will NOT be processed.";
+			log.error(msg);
+			return;
+		}
 
-        HttpServletRequest request = (HttpServletRequest) servletReq;
-        HttpServletResponse response = (HttpServletResponse) servletResp;
-        HttpSession session = request.getSession();
+		if (testingMode) {
+			servletReq.setAttribute(ATTR_REMOTE_USER,"test");
+			((HttpServletRequest)servletReq).getSession().setAttribute(ATTR_REMOTE_USER,"test");
+			chain.doFilter(servletReq, servletResp);
+			return;
+		}
+		
+		HttpServletRequest request = (HttpServletRequest) servletReq;
+		HttpServletResponse response = (HttpServletResponse) servletResp;
+		HttpSession session = request.getSession();
 
-        log.debug("RavenFilter running for: " + request.getServletPath());
+		log.debug("RavenFilter running for: " + request.getServletPath());
 
-        // Check for an authentication reply in the request
-        String wlsResponse = request.getParameter(WLS_RESPONSE_PARAM);
-        log.debug("WLS-Response is " + wlsResponse);
+		// Check for an authentication reply in the request
+		String wlsResponse = request.getParameter(WLS_RESPONSE_PARAM);
+		log.debug("WLS-Response is " + wlsResponse);
 
-        // WebauthResponse storedResponse = (WebauthResponse)
-        // session.getAttribute(WLS_RESPONSE_PARAM);
-        WebauthRequest storedRavenReq = (WebauthRequest) session.getAttribute(SESS_RAVEN_REQ_KEY);
-        RavenState storedState = (RavenState) session.getAttribute(SESS_STORED_STATE_KEY);
+		// WebauthResponse storedResponse = (WebauthResponse)
+		// session.getAttribute(WLS_RESPONSE_PARAM);
+		WebauthRequest storedRavenReq = (WebauthRequest) session
+				.getAttribute(SESS_RAVEN_REQ_KEY);
+		RavenState storedState = (RavenState) session
+				.getAttribute(SESS_STORED_STATE_KEY);
 
-        /*
-         * Check the stored state if we have it
-         */
-        if (storedState != null)
-        {
-            if (storedState.status != 200)
-            {
-                session.setAttribute(SESS_STORED_STATE_KEY, null);
-                response.sendError(storedState.status);
-                return;
-            }
+		/*
+		 * Check the stored state if we have it
+		 */
+		if (storedState != null) {
+			if (storedState.status != 200) {
+				session.setAttribute(SESS_STORED_STATE_KEY, null);
+				response.sendError(storedState.status);
+				return;
+			}
 
-            /*
-             * We do not check for expiry of the state because in this implementation we simply use
-             * the session expiry the web admin has configured in Tomcat (since the Raven
-             * authentication is only used to set up the session, it makes sense to use the
-             * session's expiry rather than Raven's).
-             */
+			/*
+			 * We do not check for expiry of the state because in this
+			 * implementation we simply use the session expiry the web admin has
+			 * configured in Tomcat (since the Raven authentication is only used
+			 * to set up the session, it makes sense to use the session's expiry
+			 * rather than Raven's).
+			 */
 
-            /*
-             * We do not check for state.last or state.issue being in the future. State.issue is
-             * already checked in the WebauthValidator when the state is initially created.
-             * State.last is set by System.currentTimeMillis at state creation time and therefore
-             * cannot be in the future.
-             */
+			/*
+			 * We do not check for state.last or state.issue being in the
+			 * future. State.issue is already checked in the WebauthValidator
+			 * when the state is initially created. State.last is set by
+			 * System.currentTimeMillis at state creation time and therefore
+			 * cannot be in the future.
+			 */
 
-            if (wlsResponse == null || wlsResponse.length() == 0)
-            {
-                chain.doFilter(request, response);
-                return;
-            }
-        }// end if (storedState != null)
+			if (wlsResponse == null || wlsResponse.length() == 0) {
+				chain.doFilter(request, response);
+				return;
+			}
+		}// end if (storedState != null)
 
-        /*
-         * Check the received response if we have it.
-         * 
-         * Note - if we have both a stored state and a WLS-Response, we let the WLS-Response
-         * override the stored state (this is no worse than if the same request arrived a few
-         * minutes later when the first session would have expired, thus removing the stored state)
-         */
-        if (wlsResponse != null && wlsResponse.length() > 0)
-        {
-            WebauthResponse webauthResponse = new WebauthResponse(wlsResponse);
-            session.setAttribute(WLS_RESPONSE_PARAM, webauthResponse);
-            try
-            {
-                log.debug("Validating received response with stored request");
-                this.getWebauthValidator().validate(storedRavenReq, webauthResponse);
+		/*
+		 * Check the received response if we have it.
+		 * 
+		 * Note - if we have both a stored state and a WLS-Response, we let the
+		 * WLS-Response override the stored state (this is no worse than if the
+		 * same request arrived a few minutes later when the first session would
+		 * have expired, thus removing the stored state)
+		 */
+		if (wlsResponse != null && wlsResponse.length() > 0) {
+			WebauthResponse webauthResponse = new WebauthResponse(wlsResponse);
+			session.setAttribute(WLS_RESPONSE_PARAM, webauthResponse);
+			try {
+				log.debug("Validating received response with stored request");
+				this.getWebauthValidator().validate(storedRavenReq,
+						webauthResponse);
 
-                RavenPrincipal principal = new RavenPrincipal(webauthResponse.get("principal"));
-                RavenState state = new RavenState(200, webauthResponse.get("issue"),
-                        webauthResponse.get("life"), webauthResponse.get("id"), principal,
-                        webauthResponse.get("auth"), webauthResponse.get("sso"), webauthResponse
-                                .get("params"));
+				RavenPrincipal principal = new RavenPrincipal(
+						webauthResponse.get("principal"));
+				RavenState state = new RavenState(200,
+						webauthResponse.get("issue"),
+						webauthResponse.get("life"), webauthResponse.get("id"),
+						principal, webauthResponse.get("auth"),
+						webauthResponse.get("sso"),
+						webauthResponse.get("params"));
 
-                log.debug("Storing new state " + state.toString());
-                session.setAttribute(SESS_STORED_STATE_KEY, state);
-                session.setAttribute(ATTR_REMOTE_USER, state.principal.getName());
-                request.setAttribute(ATTR_REMOTE_USER, state.principal.getName());
+				log.debug("Storing new state " + state.toString());
+				session.setAttribute(SESS_STORED_STATE_KEY, state);
+				session.setAttribute(ATTR_REMOTE_USER,
+						state.principal.getName());
+				request.setAttribute(ATTR_REMOTE_USER,
+						state.principal.getName());
 
-                /*
-                 * We do a redirect here so the user doesn't see the WLS-Response in his browser
-                 * location
-                 */
-                response.sendRedirect(webauthResponse.get("url"));
-                return;
-            }
-            catch (WebauthException e)
-            {
-                log.debug("Response validation failed - " + e.getMessage());
-                try
-                {
-                    int status = webauthResponse.getInt("status");
-                    if (status > 0)
-                        response.sendError(status, e.getMessage());
-                    else
-                        response.sendError(500, "Response validation failed - " + e.getMessage());
-                }
-                catch (Exception e2)
-                {
-                    response.sendError(500, "Response validation failed - " + e.getMessage());
-                }
-                return;
-            }
-        }
-        else
-        {
-            /*
-             * No WLS-Response, no stored state. Redirect the user to Raven to log in
-             */
-            WebauthRequest webauthReq = new WebauthRequest();
+				/*
+				 * We do a redirect here so the user doesn't see the
+				 * WLS-Response in his browser location
+				 */
+				response.sendRedirect(webauthResponse.get("url"));
+				return;
+			} catch (WebauthException e) {
+				log.debug("Response validation failed - " + e.getMessage());
+				try {
+					int status = webauthResponse.getInt("status");
+					if (status > 0)
+						response.sendError(status, e.getMessage());
+					else
+						response.sendError(500, "Response validation failed - "
+								+ e.getMessage());
+				} catch (Exception e2) {
+					response.sendError(500,
+							"Response validation failed - " + e.getMessage());
+				}
+				return;
+			}
+		} else {
+			/*
+			 * No WLS-Response, no stored state. Redirect the user to Raven to
+			 * log in
+			 */
+			WebauthRequest webauthReq = new WebauthRequest();
 
-            StringBuffer url = request.getRequestURL();
-            if (request.getQueryString() != null && request.getQueryString().length() > 0)
-            {
-                url.append('?');
-                url.append(request.getQueryString());
-            }
-            log.debug("Redirecting with url " + url.toString());
-            webauthReq.set("url", url.toString());
-            session.setAttribute(SESS_RAVEN_REQ_KEY, webauthReq);
-            response.sendRedirect(sRavenAuthenticatePage + "?" + webauthReq.toQString());
-            return;
-        }
-    }
+			StringBuffer url = request.getRequestURL();
+			if (request.getQueryString() != null
+					&& request.getQueryString().length() > 0) {
+				url.append('?');
+				url.append(request.getQueryString());
+			}
+			log.debug("Redirecting with url " + url.toString());
+			webauthReq.set("url", url.toString());
+			session.setAttribute(SESS_RAVEN_REQ_KEY, webauthReq);
+			response.sendRedirect(sRavenAuthenticatePage + "?"
+					+ webauthReq.toQString());
+			return;
+		}
+	}
 
-    class RavenPrincipal implements Principal
-    {
-        protected String name;
+	class RavenPrincipal implements Principal {
+		protected String name;
 
-        public RavenPrincipal(String name)
-        {
-            this.name = name;
-        }
+		public RavenPrincipal(String name) {
+			this.name = name;
+		}
 
-        @Override
-        public String getName()
-        {
-            return name;
-        }
+		@Override
+		public String getName() {
+			return name;
+		}
 
-        @Override
-        public String toString()
-        {
-            return "RavenPrincipal--" + name;
-        }
+		@Override
+		public String toString() {
+			return "RavenPrincipal--" + name;
+		}
 
-    }// end inner class RavenPrincipal
+	}// end inner class RavenPrincipal
 
-    class RavenState
-    {
+	class RavenState {
 
-        int status;
+		int status;
 
-        String issue;
+		String issue;
 
-        long last;
+		long last;
 
-        String life;
+		String life;
 
-        String id;
+		String id;
 
-        Principal principal;
+		Principal principal;
 
-        String aauth;
+		String aauth;
 
-        String sso;
+		String sso;
 
-        String params;
+		String params;
 
-        public RavenState(int status, String issue, String life, String id, Principal principal,
-                String aauth, String sso, String params)
-        {
-            this.status = status;
-            this.issue = issue;
-            this.last = System.currentTimeMillis();
-            this.life = life;
-            this.id = id;
-            this.principal = principal;
-            this.aauth = aauth;
-            this.sso = sso;
-            this.params = params;
-        }
+		public RavenState(int status, String issue, String life, String id,
+				Principal principal, String aauth, String sso, String params) {
+			this.status = status;
+			this.issue = issue;
+			this.last = System.currentTimeMillis();
+			this.life = life;
+			this.id = id;
+			this.principal = principal;
+			this.aauth = aauth;
+			this.sso = sso;
+			this.params = params;
+		}
 
-        @Override
-        public String toString()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append(" Status: ");
-            sb.append(status);
-            sb.append(" Issue: ");
-            sb.append(issue);
-            sb.append(" Last: ");
-            sb.append(last);
-            sb.append(" Life: ");
-            sb.append(life);
-            sb.append(" ID: ");
-            sb.append(id);
-            sb.append(" Principal: ");
-            sb.append(principal);
-            sb.append(" AAuth: ");
-            sb.append(aauth);
-            sb.append(" SSO: ");
-            sb.append(sso);
-            sb.append(" Params: ");
-            sb.append(params);
-            return sb.toString();
-        }
-    }// end inner class RavenState
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(" Status: ");
+			sb.append(status);
+			sb.append(" Issue: ");
+			sb.append(issue);
+			sb.append(" Last: ");
+			sb.append(last);
+			sb.append(" Life: ");
+			sb.append(life);
+			sb.append(" ID: ");
+			sb.append(id);
+			sb.append(" Principal: ");
+			sb.append(principal);
+			sb.append(" AAuth: ");
+			sb.append(aauth);
+			sb.append(" SSO: ");
+			sb.append(sso);
+			sb.append(" Params: ");
+			sb.append(params);
+			return sb.toString();
+		}
+	}// end inner class RavenState
 
 }// end RavenFilter class
