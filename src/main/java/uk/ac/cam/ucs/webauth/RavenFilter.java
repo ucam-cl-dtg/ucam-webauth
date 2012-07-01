@@ -423,6 +423,10 @@ public class RavenFilter implements Filter {
 			session.setAttribute(WLS_RESPONSE_PARAM, webauthResponse);
 			try {
 				log.debug("Validating received response with stored request");
+				if (storedRavenReq == null) {
+					response.sendError(500,"Failed to find a stored Raven request in the user's session.");
+					return;
+				}
 				this.getWebauthValidator().validate(storedRavenReq,
 						webauthResponse);
 
@@ -475,6 +479,8 @@ public class RavenFilter implements Filter {
 				// strip off everything up to and including the servlet path and
 				// replace with the prefix
 				String contextPath = request.getContextPath();
+				log.debug("Context path is: "+contextPath);
+				log.debug("Request url is: "+request.getRequestURL());
 				int index = url.indexOf(contextPath);
 				if (index == -1) {
 					log.error("Failed to find context path ("+contextPath+") in request url "+url);
