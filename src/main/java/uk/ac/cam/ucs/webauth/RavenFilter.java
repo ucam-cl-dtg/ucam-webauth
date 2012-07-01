@@ -211,11 +211,13 @@ public class RavenFilter implements Filter {
 	public static String INIT_PARAM_CERTIFICATE_PATH = "certificatePath";
 
 	/**
-	 * The filter init-param param-name to indicate if the filter should be run
-	 * in testing mode. In this mode all requests are automatically
-	 * authenticated as the test user. Defaults to false
+	 * The context parameter to indicate if the filter should be run in testing
+	 * mode. In this mode all requests are automatically authenticated as the
+	 * test user. Defaults to false
 	 */
-	public static String INIT_PARAM_TESTING_MODE = "testingMode";
+	public static String CONTEXT_PARAM_TESTING_MODE = "ravenFilterNoChecking";
+
+	public static String CONTEXT_PARAM_URL_PREFIX = "serverURLPrefix";
 
 	/**
 	 * The url of the raven authenticate page. Optional.
@@ -233,7 +235,9 @@ public class RavenFilter implements Filter {
 	protected WebauthValidator webauthValidator = null;
 
 	protected boolean testingMode = false;
-	
+
+	protected String serverURLPrefix = null;
+
 	@Override
 	public void init(FilterConfig config) throws ServletException {
 		// check if a different authenticate page is configured.
@@ -258,9 +262,16 @@ public class RavenFilter implements Filter {
 
 		// ensure WebauthValidator is initialised.
 		webauthValidator = getWebauthValidator();
-		
-		String sTestingMode = config.getInitParameter(INIT_PARAM_TESTING_MODE);
+
+		String sTestingMode = config.getServletContext().getInitParameter(
+				CONTEXT_PARAM_TESTING_MODE);
+		log.debug("Testing mode: " + sTestingMode);
 		testingMode = "true".equals(sTestingMode);
+
+		serverURLPrefix = config.getServletContext().getInitParameter(
+				CONTEXT_PARAM_URL_PREFIX);
+		log.debug("Server url prefix: " + serverURLPrefix);
+
 	}
 
 	/**
@@ -342,12 +353,13 @@ public class RavenFilter implements Filter {
 		}
 
 		if (testingMode) {
-			servletReq.setAttribute(ATTR_REMOTE_USER,"test");
-			((HttpServletRequest)servletReq).getSession().setAttribute(ATTR_REMOTE_USER,"test");
+			servletReq.setAttribute(ATTR_REMOTE_USER, "test");
+			((HttpServletRequest) servletReq).getSession().setAttribute(
+					ATTR_REMOTE_USER, "test");
 			chain.doFilter(servletReq, servletResp);
 			return;
 		}
-		
+
 		HttpServletRequest request = (HttpServletRequest) servletReq;
 		HttpServletResponse response = (HttpServletResponse) servletResp;
 		HttpSession session = request.getSession();
@@ -362,9 +374,10 @@ public class RavenFilter implements Filter {
 		// session.getAttribute(WLS_RESPONSE_PARAM);
 		WebauthRequest storedRavenReq = (WebauthRequest) session
 				.getAttribute(SESS_RAVEN_REQ_KEY);
+		log.debug("Stored raven request is "+storedRavenReq);
 		RavenState storedState = (RavenState) session
 				.getAttribute(SESS_STORED_STATE_KEY);
-
+		log.debug("Stored state is "+storedState);
 		/*
 		 * Check the stored state if we have it
 		 */
@@ -458,6 +471,19 @@ public class RavenFilter implements Filter {
 			WebauthRequest webauthReq = new WebauthRequest();
 
 			StringBuffer url = request.getRequestURL();
+			if (serverURLPrefix != null) {
+				// strip off everything up to and including the servlet path and
+				// replace with the prefix
+				String contextPath = request.getContextPath();
+				int index = url.indexOf(contextPath);
+				if (index == -1) {
+					log.error("Failed to find context path ("+contextPath+") in request url "+url);
+				}
+				else {
+					url = new StringBuffer(serverURLPrefix+url.substring(index+contextPath.length()));
+				}
+			}
+
 			if (request.getQueryString() != null
 					&& request.getQueryString().length() > 0) {
 				url.append('?');
