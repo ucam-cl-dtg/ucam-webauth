@@ -367,17 +367,27 @@ public class RavenFilter implements Filter {
 		log.debug("RavenFilter running for: " + request.getServletPath());
 
 		// Check for an authentication reply in the request
-		String wlsResponse = request.getParameter(WLS_RESPONSE_PARAM);
-		log.debug("WLS-Response is " + wlsResponse);
+		// If its a POST request then we cannot read parameters because this
+		// trashes the inputstream which we want to pass to the servlet. So, if
+		// its a post request then assume that there is no WLS-RESPONSE in the
+		// request. This is reasonable because WLS-Response is sent from the
+		// raven server and it won't do that with a POST request.
+		String wlsResponse = null;
+		if (!"POST".equals(request.getMethod())) {
+			wlsResponse = request.getParameter(WLS_RESPONSE_PARAM);
+			log.debug("WLS-Response is " + wlsResponse);
+		} else {
+			log.debug("Not checking WLS-Response because we have a POST request");
+		}
 
 		// WebauthResponse storedResponse = (WebauthResponse)
 		// session.getAttribute(WLS_RESPONSE_PARAM);
 		WebauthRequest storedRavenReq = (WebauthRequest) session
 				.getAttribute(SESS_RAVEN_REQ_KEY);
-		log.debug("Stored raven request is "+storedRavenReq);
+		log.debug("Stored raven request is " + storedRavenReq);
 		RavenState storedState = (RavenState) session
 				.getAttribute(SESS_STORED_STATE_KEY);
-		log.debug("Stored state is "+storedState);
+		log.debug("Stored state is " + storedState);
 		/*
 		 * Check the stored state if we have it
 		 */
@@ -424,7 +434,8 @@ public class RavenFilter implements Filter {
 			try {
 				log.debug("Validating received response with stored request");
 				if (storedRavenReq == null) {
-					response.sendError(500,"Failed to find a stored Raven request in the user's session.");
+					response.sendError(500,
+							"Failed to find a stored Raven request in the user's session.");
 					return;
 				}
 				this.getWebauthValidator().validate(storedRavenReq,
@@ -479,14 +490,15 @@ public class RavenFilter implements Filter {
 				// strip off everything up to and including the servlet path and
 				// replace with the prefix
 				String contextPath = request.getContextPath();
-				log.debug("Context path is: "+contextPath);
-				log.debug("Request url is: "+request.getRequestURL());
+				log.debug("Context path is: " + contextPath);
+				log.debug("Request url is: " + request.getRequestURL());
 				int index = url.indexOf(contextPath);
 				if (index == -1) {
-					log.error("Failed to find context path ("+contextPath+") in request url "+url);
-				}
-				else {
-					url = new StringBuffer(serverURLPrefix+url.substring(index+contextPath.length()));
+					log.error("Failed to find context path (" + contextPath
+							+ ") in request url " + url);
+				} else {
+					url = new StringBuffer(serverURLPrefix
+							+ url.substring(index + contextPath.length()));
 				}
 			}
 
