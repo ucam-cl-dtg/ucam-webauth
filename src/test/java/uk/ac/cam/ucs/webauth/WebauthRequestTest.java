@@ -35,234 +35,225 @@ import junit.framework.TestCase;
 
 public class WebauthRequestTest extends TestCase {
 
-    private WebauthRequest request;
+	private WebauthRequest request;
 
-    // ----------------------------------------------------------- Housekeeping
-	
-    public static void main(String args[]) {
-	junit.textui.TestRunner.run(WebauthRequestTest.class);
-    }
+	// ----------------------------------------------------------- Housekeeping
 
-    // --------------------------------------------------------------- Fixtures
-
-    protected void setUp() {
-
-	request = new WebauthRequest();
-
-	request.set("ver",2);
-        request.set("url","http://www.cam.ac.uk/raven");
-	request.set("desc","Description");
-	request.set("aauth","x-foobar,pwd");
-	request.set("msg","Message");
-	request.set("params","Params");
-        request.set("date","20050305T123456Z");
-
-    }
-
-    protected void tearDown() {
-    }
-
-    // ----------------------------------------------------------------- Tests
-     
-    public void testDefaults() throws java.text.ParseException {
-
-	WebauthRequest r = new WebauthRequest();
-
-        assertEquals("1", r.get("ver"));
-
-	// the date in the ticket should be less than about a second
-        // before now
-
-	Date now = new Date();
-	assertTrue(now.getTime() - r.getDate("date") >= 0);
-        assertTrue(now.getTime() - r.getDate("date") <  1000);
-
-    }
-
-    public void testLength() {
-	assertEquals(7,request.length());
-    }
-
-    public void testGetFieldNames() {
-	String[] e = {"ver","url","desc","aauth","msg","params","date"};
-	HashSet expected = new HashSet(Arrays.asList(e));
-	HashSet got = new HashSet();
-	for (Iterator it = request.getFieldNames(); it.hasNext(); )
-	    got.add(it.next());
-
-	assertEquals(expected,got);
-    }
-
-
-    public void testToQString() {
-
-	// Check that request.toQString is as expected
-
- 	assertEquals("ver=2&url=http%3A%2F%2Fwww.cam.ac.uk%2Fraven" +
-		     "&desc=Description&aauth=x-foobar%2Cpwd&msg=Message" +
-		     "&params=Params&date=20050305T123456Z", 
-		     request.toQString());
-
-	// now additionally set fail to true and test again
-
-	request.set("fail","yes");
-
-	//System.out.println(request.toQString());
-	assertEquals("ver=2&url=http%3A%2F%2Fwww.cam.ac.uk%2Fraven" +
-		     "&desc=Description&aauth=x-foobar%2Cpwd&msg=Message" +
-		     "&params=Params&date=20050305T123456Z&fail=yes",
-		     request.toQString());
-
-	// and the same for 'iact' set to "no"
-
-	request.set("iact","no");
-
-	//System.out.println(request.toQString());
-	assertEquals("ver=2&url=http%3A%2F%2Fwww.cam.ac.uk%2Fraven" +
-		     "&desc=Description&aauth=x-foobar%2Cpwd&iact=no" +
-		     "&msg=Message&params=Params&date=20050305T123456Z" +
-		     "&fail=yes",
-		     request.toQString());
-
-        // and finally for 'iact' set to "yes"
-
-	request.set("iact","yes");
-
-	//System.out.println(request.toQString());
- 	assertEquals("ver=2&url=http%3A%2F%2Fwww.cam.ac.uk%2Fraven" +
-		   "&desc=Description&aauth=x-foobar%2Cpwd&iact=yes" +
-		   "&msg=Message&params=Params&date=20050305T123456Z" +
-		   "&fail=yes",
-		   request.toQString());
-
-    }
-
-    public void testToString() {
-
- 	assertEquals("Webauth request: ver: 2, url: http://www.cam.ac.uk/" +
-		     "raven, desc: Description, aauth: x-foobar,pwd, iact" +
-		     ": , msg: Message, params: Params, date: 20050305T12" +
-		     "3456Z, fail: ",
-		     request.toString());
-
-    }
-
-    public void testGet() {
-	assertEquals("2", request.get("ver"));
-    }
-
-    public void testGetInt() {
-
-	assertEquals(2, request.getInt("ver"));
-
-	try {
-	    request.getInt("url");
-	    fail("didn't spot non-integer");
-	}
-	catch (NumberFormatException e) {
-	    assertTrue(true);
-	}
-	
-    }
-
-
-    public void testGetDate() throws java.text.ParseException {
-
-	assertEquals(1110026096000L, request.getDate("date"));
-
-	// Try again with a date in the summer
-
-	WebauthRequest r = new WebauthRequest();
-        r.set("date","20050605T123456Z");
-	assertEquals(1117974896000L, r.getDate("date"));
-
-	try {
-	    request.getDate("url");
-	    fail("didn't spot non-date");
-	}
-	catch (java.text.ParseException e) {
-	    assertEquals("java.text.ParseException: Unparseable date: " +
-			 "\"http://www.cam.ac.uk/raven\"",
-			 e.toString());
+	public static void main(String args[]) {
+		junit.textui.TestRunner.run(WebauthRequestTest.class);
 	}
 
-    }
+	// --------------------------------------------------------------- Fixtures
 
-    public void testGetColl() {
-	
-	HashSet set = new HashSet();
-	set.add("x-foobar");
-	set.add("pwd");
-	assertEquals(set,request.getColl("aauth"));
+	protected void setUp() {
 
-	HashSet set2 = new HashSet();
-	set2.add("2");
-	assertEquals(set2,request.getColl("ver"));
-	
-    }
+		request = new WebauthRequest();
 
-    public void testGetNonsuch() {
-	assertEquals("",request.get("nonsuch"));
-	assertEquals(-1,request.getInt("nonsuch"));
+		request.set("ver", 2);
+		request.set("url", "http://www.cam.ac.uk/raven");
+		request.set("desc", "Description");
+		request.set("aauth", "x-foobar,pwd");
+		request.set("msg", "Message");
+		request.set("params", "Params");
+		request.set("date", "20050305T123456Z");
 
-	HashSet set = new HashSet();
-	assertEquals(set,request.getColl("nonsuch"));
-
-	try {
-	    request.getDate("nonsuch");
-	    fail("didn't spot non-existent date");
 	}
-	catch (java.text.ParseException e) {
-	    assertEquals("java.text.ParseException: Unparseable date: \"\"",
-			 e.toString());
+
+	protected void tearDown() {
 	}
-    }
 
-    public void testGetNull() {
-	assertEquals("",request.get(null));
-	assertEquals(-1,request.getInt(null));
-	
-	HashSet set = new HashSet();
-	assertEquals(set,request.getColl(null));
+	// ----------------------------------------------------------------- Tests
 
-	try {
-	    request.getDate(null);
-	    fail("didn't spot non-existent date");
+	public void testDefaults() throws java.text.ParseException {
+
+		WebauthRequest r = new WebauthRequest();
+
+		assertEquals("1", r.get("ver"));
+
+		// the date in the ticket should be less than about a second
+		// before now
+
+		Date now = new Date();
+		assertTrue(now.getTime() - r.getDate("date") >= 0);
+		assertTrue(now.getTime() - r.getDate("date") < 1000);
+
 	}
-	catch (java.text.ParseException e) {
-	    assertEquals("java.text.ParseException: Unparseable date: \"\"",
-			 e.toString());
+
+	public void testLength() {
+		assertEquals(7, request.length());
 	}
-    }
 
-    public void testSet() {
+	public void testGetFieldNames() {
+		String[] e = { "ver", "url", "desc", "aauth", "msg", "params", "date" };
+		HashSet<String> expected = new HashSet<String>(Arrays.asList(e));
+		HashSet<String> got = new HashSet<String>();
+		for (Iterator<String> it = request.getFieldNames(); it.hasNext();)
+			got.add(it.next());
+		assertEquals(expected, got);
+	}
 
-	request.set("foo","bar");
-	assertEquals("bar",request.get("foo"));
+	public void testToQString() {
 
-	request.set("foo",999);
-	assertEquals("999",request.get("foo"));
+		// Check that request.toQString is as expected
 
-	request.set("foo",1110026096000L);
-	assertEquals("20050305T123456Z",request.get("foo"));
+		assertEquals("ver=2&url=http%3A%2F%2Fwww.cam.ac.uk%2Fraven"
+				+ "&desc=Description&aauth=x-foobar%2Cpwd&msg=Message"
+				+ "&params=Params&date=20050305T123456Z", request.toQString());
 
-	request.set("foo",1117974896000L);
-	assertEquals("20050605T123456Z",request.get("foo"));
+		// now additionally set fail to true and test again
 
-	HashSet set = new HashSet();
-	set.add("x-foobar");
-	set.add("pwd");
-	request.set("foo",set);
-	assertEquals("x-foobar,pwd",request.get("foo"));
-	
-    }
-    
-    public void testSerialization() throws java.io.FileNotFoundException, java.io.IOException {
+		request.set("fail", "yes");
 
-	FileOutputStream fileOut = new FileOutputStream(getClass().getResource("/").getFile() + "ser.test");
-	ObjectOutputStream out = new ObjectOutputStream(fileOut);
-	out.writeObject(request);
-        assertTrue(true);
-    }
+		// System.out.println(request.toQString());
+		assertEquals("ver=2&url=http%3A%2F%2Fwww.cam.ac.uk%2Fraven"
+				+ "&desc=Description&aauth=x-foobar%2Cpwd&msg=Message"
+				+ "&params=Params&date=20050305T123456Z&fail=yes",
+				request.toQString());
+
+		// and the same for 'iact' set to "no"
+
+		request.set("iact", "no");
+
+		// System.out.println(request.toQString());
+		assertEquals("ver=2&url=http%3A%2F%2Fwww.cam.ac.uk%2Fraven"
+				+ "&desc=Description&aauth=x-foobar%2Cpwd&iact=no"
+				+ "&msg=Message&params=Params&date=20050305T123456Z"
+				+ "&fail=yes", request.toQString());
+
+		// and finally for 'iact' set to "yes"
+
+		request.set("iact", "yes");
+
+		// System.out.println(request.toQString());
+		assertEquals("ver=2&url=http%3A%2F%2Fwww.cam.ac.uk%2Fraven"
+				+ "&desc=Description&aauth=x-foobar%2Cpwd&iact=yes"
+				+ "&msg=Message&params=Params&date=20050305T123456Z"
+				+ "&fail=yes", request.toQString());
+
+	}
+
+	public void testToString() {
+
+		assertEquals("Webauth request: ver: 2, url: http://www.cam.ac.uk/"
+				+ "raven, desc: Description, aauth: x-foobar,pwd, iact"
+				+ ": , msg: Message, params: Params, date: 20050305T12"
+				+ "3456Z, fail: ", request.toString());
+
+	}
+
+	public void testGet() {
+		assertEquals("2", request.get("ver"));
+	}
+
+	public void testGetInt() {
+
+		assertEquals(2, request.getInt("ver"));
+
+		try {
+			request.getInt("url");
+			fail("didn't spot non-integer");
+		} catch (NumberFormatException e) {
+			assertTrue(true);
+		}
+
+	}
+
+	public void testGetDate() throws java.text.ParseException {
+
+		assertEquals(1110026096000L, request.getDate("date"));
+
+		// Try again with a date in the summer
+
+		WebauthRequest r = new WebauthRequest();
+		r.set("date", "20050605T123456Z");
+		assertEquals(1117974896000L, r.getDate("date"));
+
+		try {
+			request.getDate("url");
+			fail("didn't spot non-date");
+		} catch (java.text.ParseException e) {
+			assertEquals("java.text.ParseException: Unparseable date: "
+					+ "\"http://www.cam.ac.uk/raven\"", e.toString());
+		}
+
+	}
+
+	public void testGetColl() {
+
+		HashSet<String> set = new HashSet<String>();
+		set.add("x-foobar");
+		set.add("pwd");
+		assertEquals(set, request.getColl("aauth"));
+
+		HashSet<String> set2 = new HashSet<String>();
+		set2.add("2");
+		assertEquals(set2, request.getColl("ver"));
+
+	}
+
+	public void testGetNonsuch() {
+		assertEquals("", request.get("nonsuch"));
+		assertEquals(-1, request.getInt("nonsuch"));
+
+		HashSet<String> set = new HashSet<String>();
+		assertEquals(set, request.getColl("nonsuch"));
+
+		try {
+			request.getDate("nonsuch");
+			fail("didn't spot non-existent date");
+		} catch (java.text.ParseException e) {
+			assertEquals("java.text.ParseException: Unparseable date: \"\"",
+					e.toString());
+		}
+	}
+
+	public void testGetNull() {
+		assertEquals("", request.get(null));
+		assertEquals(-1, request.getInt(null));
+
+		HashSet<String> set = new HashSet<String>();
+		assertEquals(set, request.getColl(null));
+
+		try {
+			request.getDate(null);
+			fail("didn't spot non-existent date");
+		} catch (java.text.ParseException e) {
+			assertEquals("java.text.ParseException: Unparseable date: \"\"",
+					e.toString());
+		}
+	}
+
+	public void testSet() {
+
+		request.set("foo", "bar");
+		assertEquals("bar", request.get("foo"));
+
+		request.set("foo", 999);
+		assertEquals("999", request.get("foo"));
+
+		request.set("foo", 1110026096000L);
+		assertEquals("20050305T123456Z", request.get("foo"));
+
+		request.set("foo", 1117974896000L);
+		assertEquals("20050605T123456Z", request.get("foo"));
+
+		HashSet<String> set = new HashSet<String>();
+		set.add("x-foobar");
+		set.add("pwd");
+		request.set("foo", set);
+		assertEquals("x-foobar,pwd", request.get("foo"));
+
+	}
+
+	public void testSerialization() throws java.io.FileNotFoundException,
+			java.io.IOException {
+
+		FileOutputStream fileOut = new FileOutputStream(getClass().getResource(
+				"/").getFile()
+				+ "ser.test");
+		ObjectOutputStream out = new ObjectOutputStream(fileOut);
+		out.writeObject(request);
+		assertTrue(true);
+	}
 
 }
