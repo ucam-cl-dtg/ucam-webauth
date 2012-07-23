@@ -314,7 +314,7 @@ public class WebauthResponse {
 
 	public Collection<String> getColl(String field) {
 		HashSet<String> set = new HashSet<String>();
-		for (String token : get(field).split(",")) {
+		for (String token : Util.split(',',get(field))) {
 			set.add(token.trim());
 		}
 		return set;
