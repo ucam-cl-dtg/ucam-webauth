@@ -415,6 +415,7 @@ public class RavenFilter implements Filter {
 			 */
 
 			if (wlsResponse == null || wlsResponse.length() == 0) {
+				log.debug("Accepting stored session");
 				chain.doFilter(request, response);
 				return;
 			}
