@@ -1,0 +1,31 @@
+Source: libucamwebauth-java
+Section: java
+Priority: optional
+Maintainer: Daniel Thomas <drt24-debian@srcf.ucam.org>
+Build-Depends: debhelper (>= 7), cdbs, default-jdk, maven-debian-helper (>= 1.5)
+Build-Depends-Indep: libcommons-codec-java, libcommons-logging-java, libdtgparentpom-java, libservlet2.5-java,  
+ junit4, default-jdk-doc, libcommons-codec-java-doc, libcommons-logging-java-doc,  
+ libservlet2.5-java-doc, libmaven-javadoc-plugin-java 
+Standards-Version: 3.9.2
+Vcs-Git: git://github.com/ucam-cl-dtg/ucam-webauth.git
+Vcs-Browser: https://github.com/ucam-cl-dtg/ucam-webauth
+Homepage: https://github.com/ucam-cl-dtg/ucam-webauth 
+
+Package: libucamwebauth-java
+Architecture: all
+Depends: ${misc:Depends}, ${maven:Depends}
+Recommends: ${maven:OptionalDepends}
+Suggests: libucamwebauth-java-doc
+Description: Ucam-Webauth java library and filter
+ Raven client java library and filter for java servlets
+
+Package: libucamwebauth-java-doc
+Architecture: all
+Section: doc
+Depends: ${misc:Depends}, ${maven:DocDepends}
+Recommends: ${maven:DocOptionalDepends}
+Suggests: libucamwebauth-java
+Description: Documentation for Ucam-Webauth java library and filter
+ Raven client java library and filter for java servlets
+ .
+ This package contains the API documentation of libucamwebauth-java.

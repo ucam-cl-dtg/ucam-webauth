@@ -1,0 +1,20 @@
+Format: http://dep.debian.net/deps/dep5/
+Upstream-Name: Ucam-Webauth
+Source: https://github.com/ucam-cl-dtg/ucam-webauth
+
+Files: *
+Copyright: 2005, University of Cambridge; 2012, Daniel Thomas
+License: LGPL-2 or LGPL-2.1
+
+Files: debian/*
+Copyright: 2012, Daniel Thomas <drt24-debian@srcf.ucam.org>
+License: LGPL-2.1
+
+License: LGPL-2
+  On Debian GNU/Linux system you can find the complete text of the
+  LGPL-2 license in '/usr/share/common-licenses/LGPL-2'
+
+License: LGPL-2.1
+  On Debian GNU/Linux system you can find the complete text of the
+  LGPL-2.1 license in '/usr/share/common-licenses/LGPL-2.1'
+

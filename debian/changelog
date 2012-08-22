@@ -1,0 +1,5 @@
+libucamwebauth-java (0.7.1-1) precise; urgency=low
+
+  * Initial release of debian packaging
+
+ -- Daniel Thomas <drt24-debian@srcf.ucam.org>  Wed, 22 Aug 2012 16:02:36 +0100
