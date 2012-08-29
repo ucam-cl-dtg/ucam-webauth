@@ -20,4 +20,4 @@ junit junit jar s/4\..*/4.x/ * *
 uk.ac.cam.cl.dtg parent pom s/.*/debian/ * *
 uk.ac.cam.ucs webauth jar s/.*/debian/ * *
 commons-logging s/commons-logging-api/commons-logging/ * s/.*/debian/ * *
-s/org.apache.tomcat/javax.servlet/ servlet-api jar s/.*/2.5/ * *
+javax.servlet servlet-api jar s/.*/2.5/ * *
