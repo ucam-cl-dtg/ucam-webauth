@@ -1,3 +1,9 @@
+libucamwebauth-java (0.7.1-2) precise; urgency=low
+
+  * Use --java-lib to install to /usr/share/java/
+
+ -- Daniel Thomas <drt24-debian@srcf.ucam.org>  Wed, 29 Aug 2012 17:38:50 +0100
+
 libucamwebauth-java (0.7.1-1) precise; urgency=low
 
   * Initial release of debian packaging
