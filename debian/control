@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 7), cdbs, default-jdk, maven-debian-helper (>= 1.5)
 Build-Depends-Indep: libcommons-codec-java, libcommons-logging-java, libdtgparentpom-java, libservlet2.5-java,  
  junit4, default-jdk-doc, libcommons-codec-java-doc, libcommons-logging-java-doc,  
  libservlet2.5-java-doc, libmaven-javadoc-plugin-java 
-Standards-Version: 3.9.2
+Standards-Version: 3.9.3
 Vcs-Git: git://github.com/ucam-cl-dtg/ucam-webauth.git
 Vcs-Browser: https://github.com/ucam-cl-dtg/ucam-webauth
 Homepage: https://github.com/ucam-cl-dtg/ucam-webauth 
