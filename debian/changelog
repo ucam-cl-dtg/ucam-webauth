@@ -1,3 +1,9 @@
+libucamwebauth-java (0.7.2-2) precise; urgency=low
+
+  * [691e38e] Specify a usj name of ucamwebauth
+
+ -- Daniel Thomas <drt24-debian@srcf.ucam.org>  Thu, 30 Aug 2012 14:20:18 +0100
+
 libucamwebauth-java (0.7.2-1) precise; urgency=low
 
   * New upstream release - fixed tests for different timezones and updated
