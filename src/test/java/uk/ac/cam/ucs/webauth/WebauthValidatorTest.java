@@ -32,6 +32,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.text.ParseException;
+import java.util.TimeZone;
 
 import junit.framework.TestCase;
 
@@ -180,11 +181,14 @@ public class WebauthValidatorTest extends TestCase {
 
     // --------------------------------------------------------------- Fixtures
 
-    protected void setUp() 
+    @Override
+    protected void setUp()
 	throws WebauthException, MalformedURLException, ParseException, 
 	       KeyStoreException, FileNotFoundException, IOException,
 	       NoSuchAlgorithmException, CertificateException {
 
+      // These tests fail if done not in the Europe/London timezone
+      TimeZone.setDefault(TimeZone.getTimeZone("Europe/London"));
 	// A request
 
 	request = new WebauthRequest();
@@ -221,7 +225,9 @@ public class WebauthValidatorTest extends TestCase {
 
     }
 
+    @Override
     protected void tearDown() {
+      TimeZone.setDefault(null);// Undo the change we did in setup (hopefully)
     }
 
     // ----------------------------------------------------------------- Tests
