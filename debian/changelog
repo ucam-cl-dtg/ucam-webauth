@@ -1,3 +1,10 @@
+libucamwebauth-java (0.7.2-1) precise; urgency=low
+
+  * New upstream release - fixed tests for different timezones and updated
+    parent pom.
+
+ -- Daniel Thomas <drt24-debian@srcf.ucam.org>  Thu, 30 Aug 2012 11:48:12 +0100
+
 libucamwebauth-java (0.7.1-2) precise; urgency=low
 
   * Use --java-lib to install to /usr/share/java/
