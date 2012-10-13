@@ -41,6 +41,10 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -211,6 +215,12 @@ public class RavenFilter implements Filter {
 	public static String INIT_PARAM_CERTIFICATE_PATH = "certificatePath";
 
 	/**
+	 * Set to a comma separated list of principals which should be allowed
+	 * access. If blank then any authenticated principal is granted access.
+	 */
+	public static String INIT_PARAM_ALLOWED_PRINCIPALS = "allowedPrincipals";
+
+	/**
 	 * The context parameter to indicate if the filter should be run in testing
 	 * mode. In this mode all requests are automatically authenticated as the
 	 * test user. Defaults to false
@@ -237,6 +247,8 @@ public class RavenFilter implements Filter {
 	protected boolean testingMode = false;
 
 	protected String serverURLPrefix = null;
+
+	protected Set<String> allowedPrincipals = null;
 
 	@Override
 	public void init(FilterConfig config) throws ServletException {
@@ -271,6 +283,16 @@ public class RavenFilter implements Filter {
 		serverURLPrefix = config.getServletContext().getInitParameter(
 				CONTEXT_PARAM_URL_PREFIX);
 		log.debug("Server url prefix: " + serverURLPrefix);
+
+		String sAllowedPrincipals = config
+				.getInitParameter(INIT_PARAM_ALLOWED_PRINCIPALS);
+		if (sAllowedPrincipals != null) {
+			allowedPrincipals = new HashSet<String>(
+					Arrays.asList(sAllowedPrincipals.split(",")));
+			log.debug("Restricting access to " + sAllowedPrincipals);
+		} else {
+			log.debug("Granting access to all principals");
+		}
 
 	}
 
@@ -415,8 +437,16 @@ public class RavenFilter implements Filter {
 			 */
 
 			if (wlsResponse == null || wlsResponse.length() == 0) {
-				chain.doFilter(request, response);
-				return;
+
+				if (allowedPrincipals != null
+						&& allowedPrincipals.contains(storedState.principal
+								.getName())) {
+					chain.doFilter(request, response);
+					return;
+				} else {
+					response.sendError(403,"You are not authorized to view this page.");
+					return;
+				}
 			}
 		}// end if (storedState != null)
 
