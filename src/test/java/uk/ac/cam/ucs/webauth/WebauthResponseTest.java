@@ -92,7 +92,8 @@ public class WebauthResponseTest extends TestCase {
 
 	// --------------------------------------------------------------- Fixtures
 
-	protected void setUp() {
+	@Override
+  protected void setUp() {
 
 		ok_response = new WebauthResponse(OK_RESPONSE);
 //		ok_response2 = new WebauthResponse(OK_RESPONSE);
@@ -118,7 +119,8 @@ public class WebauthResponseTest extends TestCase {
 		set.add("bar");
 	}
 
-	protected void tearDown() {
+	@Override
+  protected void tearDown() {
 	}
 
 	// ------------------------------------------------------------------ Tests

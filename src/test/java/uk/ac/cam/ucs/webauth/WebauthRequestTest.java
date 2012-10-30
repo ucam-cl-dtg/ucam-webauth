@@ -45,7 +45,8 @@ public class WebauthRequestTest extends TestCase {
 
 	// --------------------------------------------------------------- Fixtures
 
-	protected void setUp() {
+	@Override
+  protected void setUp() {
 
 		request = new WebauthRequest();
 
@@ -59,7 +60,8 @@ public class WebauthRequestTest extends TestCase {
 
 	}
 
-	protected void tearDown() {
+	@Override
+  protected void tearDown() {
 	}
 
 	// ----------------------------------------------------------------- Tests

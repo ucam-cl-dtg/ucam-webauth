@@ -182,7 +182,8 @@ public class WebauthValidatorTest extends TestCase {
 
 	// --------------------------------------------------------------- Fixtures
 
-	protected void setUp() throws WebauthException, MalformedURLException,
+	@Override
+  protected void setUp() throws WebauthException, MalformedURLException,
 			ParseException, KeyStoreException, FileNotFoundException,
 			IOException, NoSuchAlgorithmException, CertificateException {
 
@@ -221,7 +222,8 @@ public class WebauthValidatorTest extends TestCase {
 
 	}
 
-	protected void tearDown() {
+	@Override
+  protected void tearDown() {
 	}
 
 	// ----------------------------------------------------------------- Tests
