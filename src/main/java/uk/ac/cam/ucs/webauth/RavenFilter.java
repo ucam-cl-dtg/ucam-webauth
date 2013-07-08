@@ -438,8 +438,8 @@ public class RavenFilter implements Filter {
 
 			if (wlsResponse == null || wlsResponse.length() == 0) {
 				log.debug("Accepting stored session");
-				if (allowedPrincipals != null
-						&& allowedPrincipals.contains(storedState.principal
+				if (allowedPrincipals == null
+						|| allowedPrincipals.contains(storedState.principal
 								.getName())) {
 					chain.doFilter(request, response);
 					return;
