@@ -94,10 +94,10 @@ import org.apache.commons.logging.LogFactory;
  * 
  * <h3>Retrieve authenticated user name</h3>
  * 
- * Get the value of session or request attribute "RavenRemoteUser".
+ * Get the value of session attribute "RavenRemoteUser".
  * 
  * <p>
- * <code>String userId = request.getAttribute("RavenRemoteUser");</code>
+ * <code>String userId = request.getSession().getAttribute("RavenRemoteUser");</code>
  * </p>
  * 
  * 
