@@ -212,7 +212,7 @@ public class RavenFilter implements Filter {
 	 * Whether the filter allows unauthorised users through, for API filter
 	 * validation
 	 */
-	public static String INIT_PARAM_ALLOW_UNAUTHORISED = "allowedUnauthorised";
+	public static String INIT_PARAM_ALLOW_UNAUTHORISED = "allowUnauthorised";
 	
 	/**
 	 * Override of default max skew - in case there is lag in the clocks
