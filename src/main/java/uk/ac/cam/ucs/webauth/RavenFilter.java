@@ -209,6 +209,17 @@ public class RavenFilter implements Filter {
 	public static String INIT_PARAM_AUTHENTICATE_URL = "authenticateUrl";
 
 	/**
+	 * Whether the filter allows unauthorised users through, for API filter
+	 * validation
+	 */
+	public static String INIT_PARAM_ALLOW_UNAUTHORISED = "allowedUnauthorised";
+	
+	/**
+	 * Override of default max skew - in case there is lag in the clocks
+	 */
+	public static String INIT_PARAM_MAX_SKEW = "maxSkew";
+
+	/**
 	 * The filter init-param param-name path to the certificate. Optional.
 	 * Defaults to /WEB-INF/raven/pubkey2.crt
 	 */
@@ -239,6 +250,20 @@ public class RavenFilter implements Filter {
 	 */
 	private String sRavenAuthenticatePage = "https://raven.cam.ac.uk/auth/authenticate.html";
 
+	/**
+	 * Whether to allow unauthorised. Optional.
+	 * 
+	 * Defaults to false.
+	 */
+	private boolean allowUnauthorised = false;
+
+	/**
+	 * Override for max skew. Optional.
+	 * 
+	 * Defaults to null.
+	 */
+	private Integer maxSkew = null;
+
 	/** KeyStore used by WebauthValidator class */
 	protected KeyStore keyStore = null;
 
@@ -258,6 +283,16 @@ public class RavenFilter implements Filter {
 				.getInitParameter(INIT_PARAM_AUTHENTICATE_URL);
 		if (authenticatePage != null)
 			sRavenAuthenticatePage = authenticatePage;
+
+		// defaults to false if the init param is not set
+		allowUnauthorised = Boolean.parseBoolean(config
+				.getInitParameter(INIT_PARAM_ALLOW_UNAUTHORISED));
+		
+		// checks if the init-param is set, and if so overrides max skew. 
+		String maxSkew = config
+				.getInitParameter(INIT_PARAM_MAX_SKEW);
+		if (maxSkew != null)
+			this.maxSkew = Integer.parseInt(maxSkew);
 
 		// get the path to the raven certificate or use a default
 		String sCertContextPath = config
@@ -343,6 +378,9 @@ public class RavenFilter implements Filter {
 	protected WebauthValidator getWebauthValidator() {
 		if (webauthValidator == null) {
 			webauthValidator = new WebauthValidator(getKeyStore());
+			if (this.maxSkew != null) {
+				webauthValidator.setMaxSkew(this.maxSkew);
+			}
 		}
 		return webauthValidator;
 	}
@@ -508,6 +546,10 @@ public class RavenFilter implements Filter {
 				}
 				return;
 			}
+		} else if (allowUnauthorised) {
+			session.setAttribute(ATTR_REMOTE_USER, null);
+			chain.doFilter(request, response);
+			return;
 		} else {
 			/*
 			 * No WLS-Response, no stored state. Redirect the user to Raven to
