@@ -209,7 +209,9 @@ public class RavenFilter implements Filter {
 	public static String INIT_PARAM_AUTHENTICATE_URL = "authenticateUrl";
 
 	/**
-	 * Override of default max skew - in case there is lag in the clocks
+	 * Override of default max skew - in case there is lag in the clocks.
+	 * Measured in milliseconds.
+	 * Defaults to 0ms.
 	 */
 	public static String INIT_PARAM_MAX_SKEW = "maxSkew";
 
