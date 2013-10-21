@@ -461,8 +461,7 @@ public class RavenFilter implements Filter {
 					chain.doFilter(request, response);
 					return;
 				} else {
-					response.sendError(403,
-							"You are not authorized to view this page.");
+					response.sendError(403,"You are not authorized to view this page.");
 					return;
 				}
 			}
