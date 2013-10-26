@@ -226,6 +226,12 @@ public class RavenFilter implements Filter {
 	 */
 	public static String CONTEXT_PARAM_TESTING_MODE = "ravenFilterNoChecking";
 
+	/**
+	 * URL parameter which can be used in testing mode to override the default
+	 * 'test' username
+	 */
+	public static String URL_PARAM_TESTING_MODE_USEROVERRIDE = "raven_user";
+
 	public static String CONTEXT_PARAM_URL_PREFIX = "serverURLPrefix";
 
 	/**
@@ -373,17 +379,29 @@ public class RavenFilter implements Filter {
 			return;
 		}
 
-		if (testingMode) {
-			servletReq.setAttribute(ATTR_REMOTE_USER, "test");
-			((HttpServletRequest) servletReq).getSession().setAttribute(
-					ATTR_REMOTE_USER, "test");
-			chain.doFilter(servletReq, servletResp);
-			return;
-		}
-
 		HttpServletRequest request = (HttpServletRequest) servletReq;
 		HttpServletResponse response = (HttpServletResponse) servletResp;
 		HttpSession session = request.getSession();
+
+		if (testingMode) {
+			// If we are in testing mode then we check to see if the requestor
+			// has specified which user they would like to masquerade as
+			String user = request
+					.getParameter(URL_PARAM_TESTING_MODE_USEROVERRIDE);
+			if (user == null) {
+				// If its not specified then try and fish it out of the session
+				// (to see if they set it in an earlier request)
+				user = (String) session.getAttribute(ATTR_REMOTE_USER);
+			}
+			if (user == null) {
+				// Otherwise default to the user 'test'
+				user = "test";
+			}
+			servletReq.setAttribute(ATTR_REMOTE_USER, user);
+			session.setAttribute(ATTR_REMOTE_USER, user);
+			chain.doFilter(servletReq, servletResp);
+			return;
+		}
 
 		log.debug("RavenFilter running for: " + request.getServletPath());
 
