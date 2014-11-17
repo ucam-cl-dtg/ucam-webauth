@@ -75,7 +75,7 @@ public class WebauthDecoder {
 	    buff.append(c);
 	}
 
-	return Base64.decodeBase64(buff.toString());
+	return Base64.decodeBase64(buff.toString().getBytes());
     }
  
 }

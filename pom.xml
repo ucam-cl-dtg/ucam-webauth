@@ -27,7 +27,7 @@
   </parent>
   <groupId>uk.ac.cam.ucs</groupId>
   <artifactId>webauth</artifactId>
-  <version>0.7.2</version>
+  <version>0.7.5</version>
   <name>RavenFilter</name>
   <scm>
     <connection>scm:git:git://github.com/ucam-cl-dtg/ucam-webauth.git</connection>
@@ -46,6 +46,7 @@
   		<groupId>javax.servlet</groupId>
   		<artifactId>servlet-api</artifactId>
   		<version>2.5</version>
+                <scope>provided</scope>
   	</dependency>
   	<dependency>
   		<groupId>commons-logging</groupId>

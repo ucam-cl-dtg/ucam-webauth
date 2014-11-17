@@ -24,30 +24,34 @@ package uk.ac.cam.ucs.webauth;
 /** private utility methods */
 public class Util {
 
-  static String[] split(char delim, String text) {
+	/*
+	 * Split a string on delim. Note this has different semantics than the java
+	 * standard library split
+	 */
+	static String[] split(char delim, String text) {
 
-    if (text.length() == 0)
-      return new String[0];
+		if (text.length() == 0)
+			return new String[0];
 
-    int nFields = 0;
-    for (int pos = 0; pos < text.length(); ++pos)
-      if (text.charAt(pos) == delim)
-        ++nFields;
-    String[] list = new String[nFields + 1];
+		int nFields = 0;
+		for (int pos = 0; pos < text.length(); ++pos)
+			if (text.charAt(pos) == delim)
+				++nFields;
+		String[] list = new String[nFields + 1];
 
-    int toIndex = 0;
-    int fromIndex = 0;
-    int ctr = 0;
+		int toIndex = 0;
+		int fromIndex = 0;
+		int ctr = 0;
 
-    while (fromIndex <= text.length()) {
-      toIndex = text.indexOf(delim, fromIndex);
-      if (toIndex == -1)
-        toIndex = text.length();
-      list[ctr++] = text.substring(fromIndex, toIndex);
-      fromIndex = toIndex + 1;
-    }
+		while (fromIndex <= text.length()) {
+			toIndex = text.indexOf(delim, fromIndex);
+			if (toIndex == -1)
+				toIndex = text.length();
+			list[ctr++] = text.substring(fromIndex, toIndex);
+			fromIndex = toIndex + 1;
+		}
 
-    return list;
+		return list;
 
-  }
+	}
 }

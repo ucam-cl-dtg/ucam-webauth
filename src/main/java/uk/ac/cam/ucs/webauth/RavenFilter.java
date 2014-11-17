@@ -41,6 +41,9 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -90,10 +93,10 @@ import org.apache.commons.logging.LogFactory;
  * 
  * <h3>Retrieve authenticated user name</h3>
  * 
- * Get the value of session or request attribute "RavenRemoteUser".
+ * Get the value of session attribute "RavenRemoteUser".
  * 
  * <p>
- * <code>String userId = request.getAttribute("RavenRemoteUser");</code>
+ * <code>String userId = request.getSession().getAttribute("RavenRemoteUser");</code>
  * </p>
  * 
  * 
@@ -211,11 +214,23 @@ public class RavenFilter implements Filter {
 	public static String INIT_PARAM_CERTIFICATE_PATH = "certificatePath";
 
 	/**
+	 * Set to a comma separated list of principals which should be allowed
+	 * access. If blank then any authenticated principal is granted access.
+	 */
+	public static String INIT_PARAM_ALLOWED_PRINCIPALS = "allowedPrincipals";
+
+	/**
 	 * The context parameter to indicate if the filter should be run in testing
 	 * mode. In this mode all requests are automatically authenticated as the
 	 * test user. Defaults to false
 	 */
 	public static String CONTEXT_PARAM_TESTING_MODE = "ravenFilterNoChecking";
+
+	/**
+	 * URL parameter which can be used in testing mode to override the default
+	 * 'test' username
+	 */
+	public static String URL_PARAM_TESTING_MODE_USEROVERRIDE = "raven_user";
 
 	public static String CONTEXT_PARAM_URL_PREFIX = "serverURLPrefix";
 
@@ -237,6 +252,8 @@ public class RavenFilter implements Filter {
 	protected boolean testingMode = false;
 
 	protected String serverURLPrefix = null;
+
+	protected Set<String> allowedPrincipals = null;
 
 	@Override
 	public void init(FilterConfig config) throws ServletException {
@@ -271,6 +288,16 @@ public class RavenFilter implements Filter {
 		serverURLPrefix = config.getServletContext().getInitParameter(
 				CONTEXT_PARAM_URL_PREFIX);
 		log.debug("Server url prefix: " + serverURLPrefix);
+
+		String sAllowedPrincipals = config
+				.getInitParameter(INIT_PARAM_ALLOWED_PRINCIPALS);
+		if (sAllowedPrincipals != null) {
+			allowedPrincipals = new HashSet<String>(
+					Arrays.asList(sAllowedPrincipals.split(",")));
+			log.debug("Restricting access to " + sAllowedPrincipals);
+		} else {
+			log.debug("Granting access to all principals");
+		}
 
 	}
 
@@ -352,17 +379,29 @@ public class RavenFilter implements Filter {
 			return;
 		}
 
-		if (testingMode) {
-			servletReq.setAttribute(ATTR_REMOTE_USER, "test");
-			((HttpServletRequest) servletReq).getSession().setAttribute(
-					ATTR_REMOTE_USER, "test");
-			chain.doFilter(servletReq, servletResp);
-			return;
-		}
-
 		HttpServletRequest request = (HttpServletRequest) servletReq;
 		HttpServletResponse response = (HttpServletResponse) servletResp;
 		HttpSession session = request.getSession();
+
+		if (testingMode) {
+			// If we are in testing mode then we check to see if the requestor
+			// has specified which user they would like to masquerade as
+			String user = request
+					.getParameter(URL_PARAM_TESTING_MODE_USEROVERRIDE);
+			if (user == null) {
+				// If its not specified then try and fish it out of the session
+				// (to see if they set it in an earlier request)
+				user = (String) session.getAttribute(ATTR_REMOTE_USER);
+			}
+			if (user == null) {
+				// Otherwise default to the user 'test'
+				user = "test";
+			}
+			servletReq.setAttribute(ATTR_REMOTE_USER, user);
+			session.setAttribute(ATTR_REMOTE_USER, user);
+			chain.doFilter(servletReq, servletResp);
+			return;
+		}
 
 		log.debug("RavenFilter running for: " + request.getServletPath());
 
@@ -415,8 +454,16 @@ public class RavenFilter implements Filter {
 			 */
 
 			if (wlsResponse == null || wlsResponse.length() == 0) {
-				chain.doFilter(request, response);
-				return;
+				log.debug("Accepting stored session");
+				if (allowedPrincipals == null
+						|| allowedPrincipals.contains(storedState.principal
+								.getName())) {
+					chain.doFilter(request, response);
+					return;
+				} else {
+					response.sendError(403,"You are not authorized to view this page.");
+					return;
+				}
 			}
 		}// end if (storedState != null)
 

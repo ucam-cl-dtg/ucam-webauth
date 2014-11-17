@@ -165,647 +165,533 @@ public class WebauthValidatorTest extends TestCase {
 	"2!200!!20050314T140111Z!1110808871-12726-166!http://raven.cam.ac.u" +
 	"k/debug.html!jw35!pwd!!36000!Foo babies!2!";
 
-    private WebauthRequest   request;
-    private WebauthResponse  response_v2_firsthand, response_v2_sso,
-	response_v1, response_error, response_forged, response_summer;
-    private long response_v2_firsthand_date, response_v2_sso_date,
-	response_v1_date, response_error_date, response_forged_date,
-	response_summer_date;
-    private WebauthValidator validator;
 
-    // ----------------------------------------------------------- Housekeeping
-	
-    public static void main(String args[]) {
-	junit.textui.TestRunner.run(WebauthValidatorTest.class);
-    }
+	private WebauthRequest request;
+	private WebauthResponse response_v2_firsthand, response_v2_sso,
+			response_v1, response_error, response_forged, response_summer;
+	@SuppressWarnings("unused")
+	private long response_v2_firsthand_date, response_v2_sso_date,
+			response_v1_date, response_error_date, response_forged_date,
+			response_summer_date;
+	private WebauthValidator validator;
 
-    // --------------------------------------------------------------- Fixtures
+	// ----------------------------------------------------------- Housekeeping
 
-    @Override
-    protected void setUp()
-	throws WebauthException, MalformedURLException, ParseException, 
-	       KeyStoreException, FileNotFoundException, IOException,
-	       NoSuchAlgorithmException, CertificateException {
-
-      // These tests fail if done not in the Europe/London timezone
-      TimeZone.setDefault(TimeZone.getTimeZone("Europe/London"));
-	// A request
-
-	request = new WebauthRequest();
-	request.set("ver",2);
-	request.set("url","http://raven.cam.ac.uk/debug.html");
-
-	// Some responses 
-
-	response_v2_firsthand = new WebauthResponse(RESPONSE_V2_FIRSTHAND);
-	response_v2_firsthand_date = response_v2_firsthand.getDate("issue");
-
-	response_v2_sso = new WebauthResponse(RESPONSE_V2_SSO);
-	response_v2_sso_date = response_v2_sso.getDate("issue");
-
-	response_v1 = new WebauthResponse(RESPONSE_V1);
-	response_v1_date = response_v1.getDate("issue");
-
-	response_error = new WebauthResponse(RESPONSE_ERROR);
-	response_error_date = response_error.getDate("issue");
-
-	response_forged = new WebauthResponse(RESPONSE_FORGED);
-	response_forged_date = response_forged.getDate("issue");
-	 
-	response_summer = new WebauthResponse(RESPONSE_SUMMER);
-	response_summer_date = response_summer.getDate("issue");
-
-
-	// A key store and a validator using it
-
-	KeyStore ks = KeyStore.getInstance("JKS");
-	ks.load(this.getClass().getResourceAsStream("/keystore"),
-		"keystore password".toCharArray());
-	validator = new WebauthValidator(ks);
-
-    }
-
-    @Override
-    protected void tearDown() {
-      TimeZone.setDefault(null);// Undo the change we did in setup (hopefully)
-    }
-
-    // ----------------------------------------------------------------- Tests
-
-    // Note that passing WebauthResponse.get("ssue") as a date to
-    // validate is normally a silly thing to do (you want to pass the
-    // current date/time) but it's useful here becasue it means we can
-    // run tests with response messages that were actually created
-    // some time ago...
-
-    public void testV2Date() {
-	assertEquals(response_v2_firsthand_date, 1111072390000L);
-    }
-
-    public void testSummerDate() {
-	assertEquals(response_summer_date, 1112280988000L);
-    }
-
-    // Basic tests - accept a valid response, reject a forged one
-
-    public void testDefaults() {
-	assertEquals(30000,validator.getTimeout());
-	assertEquals(500,validator.getMaxSkew());
-	assertEquals("webauth-pubkey",validator.getKeyPrefix());
-    }
-
-    public void testBasic() throws WebauthException {
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   response_v2_firsthand_date);
-    }
-
-    public void testForged() {
-	try {
-	    validator.validate(request, 
-			       response_forged,
-			       response_forged_date);
-	    fail("Didn't detect forged response");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Unable to verify response signature",
-			 e.toString());
-	}
-    }
-
-    // Various parameter errors
-
-    public void testMissVer() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(MISS_VER);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("Didn't detect missing protocol version number");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Protocol version number missing from response",
-			 e.toString());
-	}
-    }
-
-    public void testBadVer() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(BAD_VER);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("Didn't detect bad protocol version number");
-	}
-	catch (WebauthException e) {
-	    assertTrue(true);
-	}
-    }
-
-    public void testMissStatus() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(MISS_STATUS);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("Didn't detect missing status code");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Status code missing from response",
-			 e.toString());
-	}
-    }
-
-    public void testSmallStatus() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(SMALL_STATUS);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("Didn't detect out of range status code");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Unrecognised status code: 1",
-			 e.toString());
-	}
-    }
-
-    public void testMissID() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(MISS_ID);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("didn't detect missing response ID");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response ID missing",
-			 e.toString());
-	}
-    }
-
-    public void testMissURL() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(MISS_URL);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("didn't detect missing response URL");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "URL missing from response",
-			 e.toString());
-	}
-    }
-
-    public void testMissPrincipal() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(MISS_PRINCIPAL);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("didn't detect missing principal in status 200 response");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Principal missing from status 200 response",
-			 e.toString());
-	}
-    }
-
-    public void testNoAuthSSO() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(NO_AUTH_SSO);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("didn't spot missing first-hand and SSO tokens in response");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "No authentication type found in status 200 response",
-			 e.toString());
-	}
-    }
-
-    public void testBadAuthSSO() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(BAD_AUTH_SSO);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("didn't detect both first-hand and SSO tokens in response");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Both first-hand and SSO auth tokens found " +
-			 "in response",
-			 e.toString());
-	}
-    }
-
-    public void testMissKId() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(MISS_KID);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("Didn't detect missing KId in status 200 response");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "KeyID and/or signature missing from status " +
-			 "200 response",
-			 e.toString());
-	}
-    }
-
-    public void testBadKId() throws WebauthException, ParseException {
-	WebauthResponse r = new WebauthResponse(BAD_KID);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("Didn't detect invalid KId");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Failed to retrieve a key with alias " +
-			 "webauth-pubkey3 from the key store",
-			 e.toString());
-	}
-    }
-
-    public void testMissSig() throws WebauthException,  ParseException {
-	WebauthResponse r = new WebauthResponse(MISS_SIG);
-	try {
-	    validator.validate(request, r, r.getDate("issue"));
-	    fail("Didn't detect missing sig in status 200 response");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "KeyID and/or signature missing from status " +
-			 "200 response",
-			 e.toString());
-	}
-    }
-
-    // Test protocol version handling
-
-    public void testVer() {
-	request.set("ver",1);
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       response_v2_firsthand_date);
-	    fail("Didn't detect unacceptable version number");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Unacceptable protocol version (2) in response",
-			 e.toString());
-	}
-    }
-
-    // Test URL matching
-    
-    public void testURL() throws WebauthException, MalformedURLException {
-
-	request.set("url","http://raven.cam.ac.uk/");
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   response_v2_firsthand_date);
-
-    	request.set("url","http://raven.cam.ac.uk/debug.html?foobar");
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       response_v2_firsthand_date);
-	    fail("Didn't detect short URL in response");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "URL in response (http://raven.cam.ac.uk/debug.htm" +
-			 "l) does not match expected URL (http://raven.cam." +
-			 "ac.uk/debug.html?foobar)",
-			 e.toString());
-	}
-	
-	request.set("url","http://a.b/c.d/");
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       response_v2_firsthand_date);
-	    fail("Didn't detect different URL in response");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "URL in response (http://raven.cam.ac.uk/debug.htm" +
-			 "l) does not match expected URL (http://a.b/c.d/)",
-			 e.toString());
+	public static void main(String args[]) {
+		junit.textui.TestRunner.run(WebauthValidatorTest.class);
 	}
 
-    }
+	// --------------------------------------------------------------- Fixtures
 
-    // Test status code handling
+	@Override
+  protected void setUp() throws WebauthException, MalformedURLException,
+			ParseException, KeyStoreException, FileNotFoundException,
+			IOException, NoSuchAlgorithmException, CertificateException {
 
-    public void testStatus() {
-	try {
-	    validator.validate(request, 
-			       response_error, 
-			       response_error_date);
-	    fail("Didn't detect non-200 status");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Parameter error in authentication request: " +
-			 "Missing required parameter 'ver'",
-			 e.toString());
-	}
-    }
+		// A request
 
-    // Timeout handling - edge case with zero timeout, zero skew
+		request = new WebauthRequest();
+		request.set("ver", 2);
+		request.set("url", "http://raven.cam.ac.uk/debug.html");
 
-    public void testZeroTimeout() throws WebauthException {
+		// Some responses
 
-	validator.setTimeout(0);
-	validator.setMaxSkew(0);
-        long issue = response_v2_firsthand_date;
+		response_v2_firsthand = new WebauthResponse(RESPONSE_V2_FIRSTHAND);
+		response_v2_firsthand_date = response_v2_firsthand.getDate("issue");
 
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   issue);
+		response_v2_sso = new WebauthResponse(RESPONSE_V2_SSO);
+		response_v2_sso_date = response_v2_sso.getDate("issue");
 
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       issue-1);
-	    fail("Didn't detect response issued in the future");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response apparently issued in the future; " +
-			    "issue time 2005-03-17 15:13:10.000 GMT " +
-			 "compared with 2005-03-17 15:13:09.999 GMT",
-			 e.toString());
+		response_v1 = new WebauthResponse(RESPONSE_V1);
+		response_v1_date = response_v1.getDate("issue");
+
+		response_error = new WebauthResponse(RESPONSE_ERROR);
+		response_error_date = response_error.getDate("issue");
+
+		response_forged = new WebauthResponse(RESPONSE_FORGED);
+		response_forged_date = response_forged.getDate("issue");
+
+		response_summer = new WebauthResponse(RESPONSE_SUMMER);
+		response_summer_date = response_summer.getDate("issue");
+
+		// A key store and a validator using it
+
+		KeyStore ks = KeyStore.getInstance("JKS");
+		ks.load(this.getClass().getResourceAsStream("/keystore"),
+				"keystore password".toCharArray());
+		validator = new WebauthValidator(ks);
+
 	}
 
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       issue+1);
-	    fail("Didn't detect a response that was stale");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response issued too long ago; " +
-			    "issue time 2005-03-17 15:13:10.000 GMT " +
-			 "compared with 2005-03-17 15:13:10.001 GMT",
-			 e.toString());
+	@Override
+  protected void tearDown() {
 	}
 
-    }
+	// ----------------------------------------------------------------- Tests
 
-    // Timeout handling, defined timeout
+	// Note that passing WebauthResponse.get("ssue") as a date to
+	// validate is normally a silly thing to do (you want to pass the
+	// current date/time) but it's useful here becasue it means we can
+	// run tests with response messages that were actually created
+	// some time ago...
 
-    public void testTimeout() throws WebauthException {
-	
-	final int TIMEOUT = 30000;
-
-	validator.setTimeout(TIMEOUT);
-	validator.setMaxSkew(0);
-        long issue = response_v2_firsthand_date;
-
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   issue);
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   issue+TIMEOUT);
-
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       issue-1);
-	    fail("Didn't detect response issued in the future");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response apparently issued in the future; " +
-			    "issue time 2005-03-17 15:13:10.000 GMT " +
-			 "compared with 2005-03-17 15:13:09.999 GMT",
-			 e.toString());
+	public void testV2Date() {
+		assertEquals(response_v2_firsthand_date, 1111072390000L);
 	}
 
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       issue+TIMEOUT+1);
-	    fail("Didn't detect a response that was stale");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response issued too long ago; " +
-			    "issue time 2005-03-17 15:13:10.000 GMT " +
-			 "compared with 2005-03-17 15:13:40.001 GMT",
-			 e.toString());
+	public void testSummerDate() {
+		assertEquals(response_summer_date, 1112280988000L);
 	}
 
-    }
+	// Basic tests - accept a valid response, reject a forged one
 
-    // Timeout handling - defined skew
-
-    public void testSkew() throws WebauthException {
-
-	final int SKEW = 120000;
-
-	validator.setTimeout(0);
-	validator.setMaxSkew(SKEW);
-        long issue = response_v2_firsthand_date;
-
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   issue-SKEW);
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   issue+SKEW);
-
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       issue-SKEW-1);
-	    fail("Didn't detect response issued in the future");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response apparently issued in the future; " +
-			    "issue time 2005-03-17 15:13:10.000 GMT " +
-			 "compared with 2005-03-17 15:11:09.999 GMT",
-			 e.toString());
+	public void testDefaults() {
+		assertEquals(30000, validator.getTimeout());
+		assertEquals(500, validator.getMaxSkew());
+		assertEquals("webauth-pubkey", validator.getKeyPrefix());
 	}
 
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       issue+SKEW+1);
-	    fail("Didn't detect a response that was stale");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response issued too long ago; " +
-			    "issue time 2005-03-17 15:13:10.000 GMT " +
-			 "compared with 2005-03-17 15:15:10.001 GMT",
-			 e.toString());
+	public void testBasic() throws WebauthException {
+		validator.validate(request, response_v2_firsthand,
+				response_v2_firsthand_date);
 	}
 
-    }
-
-    // Timeout handling - defined timeout AND skew
-
-    public void testTimeoutAndSkew() throws WebauthException {
-
-	final int TIMEOUT = 30000;
-	final int SKEW   = 120000;
-
-	validator.setTimeout(TIMEOUT);
-	validator.setMaxSkew(SKEW);
-        long issue = response_v2_firsthand_date;
-
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   issue-SKEW);
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   issue+TIMEOUT+SKEW);
-
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       issue-SKEW-1);
-	    fail("Didn't detect response issued in the future");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response apparently issued in the future; " +
-			    "issue time 2005-03-17 15:13:10.000 GMT " +
-			 "compared with 2005-03-17 15:11:09.999 GMT",
-			 e.toString());
+	public void testForged() {
+		try {
+			validator.validate(request, response_forged, response_forged_date);
+			fail("Didn't detect forged response");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Unable to verify response signature", e.toString());
+		}
 	}
 
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       issue+TIMEOUT+SKEW+1);
-	    fail("Didn't detect a response that was stale");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response issued too long ago; " +
-			    "issue time 2005-03-17 15:13:10.000 GMT " +
-			 "compared with 2005-03-17 15:15:40.001 GMT",
-			 e.toString());
-	}
+	// Various parameter errors
 
-    }
-
-    // Timeout handling - summer time date
-
-    public void testSummerTime() throws WebauthException {
-
-	validator.setTimeout(0);
-	validator.setMaxSkew(0);
-        long issue = response_summer_date;
-
-	validator.validate(request, 
-			   response_summer, 
-			   issue);
-
-	try {
-	    validator.validate(request, 
-			       response_summer, 
-			       issue-1);
-	    fail("Didn't detect response issued in the future");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response apparently issued in the future; " +
-			    "issue time 2005-03-31 15:56:28.000 BST " +
-			 "compared with 2005-03-31 15:56:27.999 BST",
-			 e.toString());
+	public void testMissVer() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(MISS_VER);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("Didn't detect missing protocol version number");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Protocol version number missing from response",
+					e.toString());
+		}
 	}
 
-	try {
-	    validator.validate(request, 
-			       response_summer, 
-			       issue+1);
-	    fail("Didn't detect a response that was stale");
-	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "Response issued too long ago; " +
-			    "issue time 2005-03-31 15:56:28.000 BST " +
-			 "compared with 2005-03-31 15:56:28.001 BST",
-			 e.toString());
+	public void testBadVer() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(BAD_VER);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("Didn't detect bad protocol version number");
+		} catch (WebauthException e) {
+			assertTrue(true);
+		}
 	}
 
-    }
-
-
-    // Test iact handling
-
-    public void testIact() throws WebauthException {
-	
-	request.set("iact","yes");
-	
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   response_v2_firsthand_date);
-	
-	try {
-	    validator.validate(request, 
-			       response_v2_sso, 
-			       response_v2_sso_date);
-	    fail("Didn't detect unacceptable iact requirements");
+	public void testMissStatus() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(MISS_STATUS);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("Didn't detect missing status code");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Status code missing from response", e.toString());
+		}
 	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "First-hand authentication required but not " +
-			 "supplied",
-			 e.toString());
+
+	public void testSmallStatus() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(SMALL_STATUS);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("Didn't detect out of range status code");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Unrecognised status code: 1", e.toString());
+		}
 	}
-    }
 
-    // Test aauth handling
-
-    public void testAAuth() throws WebauthException {
-
-	request.set("aauth","pwd,foo");
-	
-	validator.validate(request, 
-			   response_v2_firsthand, 
-			   response_v2_firsthand_date);
-
-	validator.validate(request, 
-			       response_v2_sso, 
-			       response_v2_sso_date);
-
-	request.set("aauth","foo,bar");
-
-	try {
-	    validator.validate(request, 
-			       response_v2_firsthand, 
-			       response_v2_firsthand_date);
-	    fail("Didn't detect unacceptable auth in v2_firsthand");
+	public void testMissID() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(MISS_ID);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("didn't detect missing response ID");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response ID missing", e.toString());
+		}
 	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "No acceptable authentication types used",
-			 e.toString());
+
+	public void testMissURL() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(MISS_URL);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("didn't detect missing response URL");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "URL missing from response", e.toString());
+		}
 	}
-	
-	try {
-	    validator.validate(request, 
-			       response_v2_sso, 
-			       response_v2_sso_date);
-	    fail("Didn't detect unacceptable auth in v2_sso");
+
+	public void testMissPrincipal() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(MISS_PRINCIPAL);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("didn't detect missing principal in status 200 response");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Principal missing from status 200 response",
+					e.toString());
+		}
 	}
-	catch (WebauthException e) {
-	    assertEquals("uk.ac.cam.ucs.webauth.WebauthException: " +
-			 "No acceptable authentication types used",
-			 e.toString());
+
+	public void testNoAuthSSO() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(NO_AUTH_SSO);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("didn't spot missing first-hand and SSO tokens in response");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "No authentication type found in status 200 response",
+					e.toString());
+		}
 	}
-    }
+
+	public void testBadAuthSSO() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(BAD_AUTH_SSO);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("didn't detect both first-hand and SSO tokens in response");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Both first-hand and SSO auth tokens found "
+					+ "in response", e.toString());
+		}
+	}
+
+	public void testMissKId() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(MISS_KID);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("Didn't detect missing KId in status 200 response");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "KeyID and/or signature missing from status "
+					+ "200 response", e.toString());
+		}
+	}
+
+	public void testBadKId() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(BAD_KID);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("Didn't detect invalid KId");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Failed to retrieve a key with alias "
+					+ "webauth-pubkey3 from the key store", e.toString());
+		}
+	}
+
+	public void testMissSig() throws WebauthException, ParseException {
+		WebauthResponse r = new WebauthResponse(MISS_SIG);
+		try {
+			validator.validate(request, r, r.getDate("issue"));
+			fail("Didn't detect missing sig in status 200 response");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "KeyID and/or signature missing from status "
+					+ "200 response", e.toString());
+		}
+	}
+
+	// Test protocol version handling
+
+	public void testVer() {
+		request.set("ver", 1);
+		try {
+			validator.validate(request, response_v2_firsthand,
+					response_v2_firsthand_date);
+			fail("Didn't detect unacceptable version number");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Unacceptable protocol version (2) in response",
+					e.toString());
+		}
+	}
+
+	// Test URL matching
+
+	public void testURL() throws WebauthException, MalformedURLException {
+
+		request.set("url", "http://raven.cam.ac.uk/");
+		validator.validate(request, response_v2_firsthand,
+				response_v2_firsthand_date);
+
+		request.set("url", "http://raven.cam.ac.uk/debug.html?foobar");
+		try {
+			validator.validate(request, response_v2_firsthand,
+					response_v2_firsthand_date);
+			fail("Didn't detect short URL in response");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "URL in response (http://raven.cam.ac.uk/debug.htm"
+					+ "l) does not match expected URL (http://raven.cam."
+					+ "ac.uk/debug.html?foobar)", e.toString());
+		}
+
+		request.set("url", "http://a.b/c.d/");
+		try {
+			validator.validate(request, response_v2_firsthand,
+					response_v2_firsthand_date);
+			fail("Didn't detect different URL in response");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "URL in response (http://raven.cam.ac.uk/debug.htm"
+					+ "l) does not match expected URL (http://a.b/c.d/)",
+					e.toString());
+		}
+
+	}
+
+	// Test status code handling
+
+	public void testStatus() {
+		try {
+			validator.validate(request, response_error, response_error_date);
+			fail("Didn't detect non-200 status");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Parameter error in authentication request: "
+					+ "Missing required parameter 'ver'", e.toString());
+		}
+	}
+
+	// Timeout handling - edge case with zero timeout, zero skew
+
+	public void testZeroTimeout() throws WebauthException {
+
+		validator.setTimeout(0);
+		validator.setMaxSkew(0);
+		long issue = response_v2_firsthand_date;
+
+		validator.validate(request, response_v2_firsthand, issue);
+
+		try {
+			validator.validate(request, response_v2_firsthand, issue - 1);
+			fail("Didn't detect response issued in the future");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response apparently issued in the future; "
+					+ "issue time 2005-03-17 15:13:10.000 GMT "
+					+ "compared with 2005-03-17 15:13:09.999 GMT", e.toString());
+		}
+
+		try {
+			validator.validate(request, response_v2_firsthand, issue + 1);
+			fail("Didn't detect a response that was stale");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response issued too long ago; "
+					+ "issue time 2005-03-17 15:13:10.000 GMT "
+					+ "compared with 2005-03-17 15:13:10.001 GMT", e.toString());
+		}
+
+	}
+
+	// Timeout handling, defined timeout
+
+	public void testTimeout() throws WebauthException {
+
+		final int TIMEOUT = 30000;
+
+		validator.setTimeout(TIMEOUT);
+		validator.setMaxSkew(0);
+		long issue = response_v2_firsthand_date;
+
+		validator.validate(request, response_v2_firsthand, issue);
+		validator.validate(request, response_v2_firsthand, issue + TIMEOUT);
+
+		try {
+			validator.validate(request, response_v2_firsthand, issue - 1);
+			fail("Didn't detect response issued in the future");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response apparently issued in the future; "
+					+ "issue time 2005-03-17 15:13:10.000 GMT "
+					+ "compared with 2005-03-17 15:13:09.999 GMT", e.toString());
+		}
+
+		try {
+			validator.validate(request, response_v2_firsthand, issue + TIMEOUT
+					+ 1);
+			fail("Didn't detect a response that was stale");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response issued too long ago; "
+					+ "issue time 2005-03-17 15:13:10.000 GMT "
+					+ "compared with 2005-03-17 15:13:40.001 GMT", e.toString());
+		}
+
+	}
+
+	// Timeout handling - defined skew
+
+	public void testSkew() throws WebauthException {
+
+		final int SKEW = 120000;
+
+		validator.setTimeout(0);
+		validator.setMaxSkew(SKEW);
+		long issue = response_v2_firsthand_date;
+
+		validator.validate(request, response_v2_firsthand, issue - SKEW);
+		validator.validate(request, response_v2_firsthand, issue + SKEW);
+
+		try {
+			validator
+					.validate(request, response_v2_firsthand, issue - SKEW - 1);
+			fail("Didn't detect response issued in the future");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response apparently issued in the future; "
+					+ "issue time 2005-03-17 15:13:10.000 GMT "
+					+ "compared with 2005-03-17 15:11:09.999 GMT", e.toString());
+		}
+
+		try {
+			validator
+					.validate(request, response_v2_firsthand, issue + SKEW + 1);
+			fail("Didn't detect a response that was stale");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response issued too long ago; "
+					+ "issue time 2005-03-17 15:13:10.000 GMT "
+					+ "compared with 2005-03-17 15:15:10.001 GMT", e.toString());
+		}
+
+	}
+
+	// Timeout handling - defined timeout AND skew
+
+	public void testTimeoutAndSkew() throws WebauthException {
+
+		final int TIMEOUT = 30000;
+		final int SKEW = 120000;
+
+		validator.setTimeout(TIMEOUT);
+		validator.setMaxSkew(SKEW);
+		long issue = response_v2_firsthand_date;
+
+		validator.validate(request, response_v2_firsthand, issue - SKEW);
+		validator.validate(request, response_v2_firsthand, issue + TIMEOUT
+				+ SKEW);
+
+		try {
+			validator
+					.validate(request, response_v2_firsthand, issue - SKEW - 1);
+			fail("Didn't detect response issued in the future");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response apparently issued in the future; "
+					+ "issue time 2005-03-17 15:13:10.000 GMT "
+					+ "compared with 2005-03-17 15:11:09.999 GMT", e.toString());
+		}
+
+		try {
+			validator.validate(request, response_v2_firsthand, issue + TIMEOUT
+					+ SKEW + 1);
+			fail("Didn't detect a response that was stale");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response issued too long ago; "
+					+ "issue time 2005-03-17 15:13:10.000 GMT "
+					+ "compared with 2005-03-17 15:15:40.001 GMT", e.toString());
+		}
+
+	}
+
+	// Timeout handling - summer time date
+
+	public void testSummerTime() throws WebauthException {
+
+		validator.setTimeout(0);
+		validator.setMaxSkew(0);
+		long issue = response_summer_date;
+
+		validator.validate(request, response_summer, issue);
+
+		try {
+			validator.validate(request, response_summer, issue - 1);
+			fail("Didn't detect response issued in the future");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response apparently issued in the future; "
+					+ "issue time 2005-03-31 15:56:28.000 BST "
+					+ "compared with 2005-03-31 15:56:27.999 BST", e.toString());
+		}
+
+		try {
+			validator.validate(request, response_summer, issue + 1);
+			fail("Didn't detect a response that was stale");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "Response issued too long ago; "
+					+ "issue time 2005-03-31 15:56:28.000 BST "
+					+ "compared with 2005-03-31 15:56:28.001 BST", e.toString());
+		}
+
+	}
+
+	// Test iact handling
+
+	public void testIact() throws WebauthException {
+
+		request.set("iact", "yes");
+
+		validator.validate(request, response_v2_firsthand,
+				response_v2_firsthand_date);
+
+		try {
+			validator.validate(request, response_v2_sso, response_v2_sso_date);
+			fail("Didn't detect unacceptable iact requirements");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "First-hand authentication required but not "
+					+ "supplied", e.toString());
+		}
+	}
+
+	// Test aauth handling
+
+	public void testAAuth() throws WebauthException {
+
+		request.set("aauth", "pwd,foo");
+
+		validator.validate(request, response_v2_firsthand,
+				response_v2_firsthand_date);
+
+		validator.validate(request, response_v2_sso, response_v2_sso_date);
+
+		request.set("aauth", "foo,bar");
+
+		try {
+			validator.validate(request, response_v2_firsthand,
+					response_v2_firsthand_date);
+			fail("Didn't detect unacceptable auth in v2_firsthand");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "No acceptable authentication types used", e.toString());
+		}
+
+		try {
+			validator.validate(request, response_v2_sso, response_v2_sso_date);
+			fail("Didn't detect unacceptable auth in v2_sso");
+		} catch (WebauthException e) {
+			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+					+ "No acceptable authentication types used", e.toString());
+		}
+	}
 
 }
-
-
-
-
-
-
-
-
