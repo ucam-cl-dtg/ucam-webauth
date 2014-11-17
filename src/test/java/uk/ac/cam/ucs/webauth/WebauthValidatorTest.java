@@ -32,7 +32,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.text.ParseException;
-import java.util.TimeZone;
 
 import junit.framework.TestCase;
 
