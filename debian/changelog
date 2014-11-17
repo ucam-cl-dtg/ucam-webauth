@@ -1,3 +1,9 @@
+libucamwebauth-java (0.7.5-2) utopic; urgency=medium
+
+  * Add fix for timezones for tests - need to run them in Europe/London
+
+ -- Daniel Thomas <drt24-debian@srcf.ucam.org>  Mon, 17 Nov 2014 13:52:08 +0000
+
 libucamwebauth-java (0.7.5-1) utopic; urgency=low
 
   * New upstream release

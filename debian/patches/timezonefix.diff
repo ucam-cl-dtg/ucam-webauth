@@ -1,0 +1,45 @@
+commit 346b755c3c0f1be337ed9ef804bab70360e234e7
+Author: Daniel Thomas <drt24@cam.ac.uk>
+Date:   Mon Nov 17 12:19:46 2014 +0000
+
+    Ensure tests are run in Europe/London timezone as otherwise they will fail
+    
+    This re-instates cdaa87776c1a5556a39a00eb51366d82e6978977 which somehow got lost
+
+diff --git a/src/test/java/uk/ac/cam/ucs/webauth/WebauthValidatorTest.java b/src/test/java/uk/ac/cam/ucs/webauth/WebauthValidatorTest.java
+index 82f1279..afc0d14 100644
+--- a/src/test/java/uk/ac/cam/ucs/webauth/WebauthValidatorTest.java
++++ b/src/test/java/uk/ac/cam/ucs/webauth/WebauthValidatorTest.java
+@@ -32,6 +32,7 @@ import java.security.KeyStoreException;
+ import java.security.NoSuchAlgorithmException;
+ import java.security.cert.CertificateException;
+ import java.text.ParseException;
++import java.util.TimeZone;
+ 
+ import junit.framework.TestCase;
+ 
+@@ -183,10 +184,13 @@ public class WebauthValidatorTest extends TestCase {
+ 	// --------------------------------------------------------------- Fixtures
+ 
+ 	@Override
+-  protected void setUp() throws WebauthException, MalformedURLException,
++	protected void setUp() throws WebauthException, MalformedURLException,
+ 			ParseException, KeyStoreException, FileNotFoundException,
+ 			IOException, NoSuchAlgorithmException, CertificateException {
+ 
++		// These tests fail if done not in the Europe/London timezone
++		TimeZone.setDefault(TimeZone.getTimeZone("Europe/London"));
++
+ 		// A request
+ 
+ 		request = new WebauthRequest();
+@@ -223,7 +227,8 @@ public class WebauthValidatorTest extends TestCase {
+ 	}
+ 
+ 	@Override
+-  protected void tearDown() {
++	protected void tearDown() {
++		TimeZone.setDefault(null);// Undo the change we did in setup (hopefully)
+ 	}
+ 
+ 	// ----------------------------------------------------------------- Tests
