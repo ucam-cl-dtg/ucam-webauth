@@ -176,6 +176,13 @@ public class WebauthValidator {
 	public void validate(WebauthRequest request, WebauthResponse response,
 			long date) throws WebauthException {
 
+	  // If these checks fail then this is a bug but better to be explicit about what failed
+	  if (null == request) {
+	    throw new NullPointerException("Null WebauthRequest");
+	  }
+	  if (null == response) {
+	    throw new NullPointerException("Null WebauthResponse");
+	  }
 		check_parameters(response);
 		check_protocol(request, response);
 		check_url(request, response);
