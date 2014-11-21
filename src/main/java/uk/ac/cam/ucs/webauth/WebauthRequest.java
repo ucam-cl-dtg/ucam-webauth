@@ -167,7 +167,7 @@ public class WebauthRequest implements Serializable {
 	public String get(String field) {
 		if (field == null || data.get(field) == null)
 			return "";
-		return (String) data.get(field);
+		return data.get(field);
 	}
 
 	/**
@@ -239,7 +239,8 @@ public class WebauthRequest implements Serializable {
 	 * @return a string representation of the request
 	 */
 
-	public String toString() {
+	@Override
+  public String toString() {
 
 		StringBuffer str = new StringBuffer("Webauth request: ");
 

@@ -255,6 +255,7 @@ public class WebauthRequestTest extends TestCase {
 				+ "ser.test");
 		ObjectOutputStream out = new ObjectOutputStream(fileOut);
 		out.writeObject(request);
+		out.close();
 		assertTrue(true);
 	}
 

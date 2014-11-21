@@ -240,7 +240,7 @@ public class WebauthResponse {
 	public String get(String field) {
 		if (field == null || data.get(field) == null)
 			return "";
-		return (String) data.get(field);
+		return data.get(field);
 	}
 
 	/**
