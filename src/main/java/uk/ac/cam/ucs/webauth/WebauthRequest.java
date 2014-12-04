@@ -1,7 +1,7 @@
 /* This file is part of the University of Cambridge Web Authentication
  * System Java Toolkit
  *
- * Copyright 2005 University of Cambridge
+ * Copyright 2005,2014 University of Cambridge
  *
  * This toolkit is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -48,7 +48,7 @@ import java.util.TimeZone;
 public class WebauthRequest implements Serializable {
 
 	private static final long serialVersionUID = -8570777065447980574L;
-	private static final String DEFAULT_VER = "1";
+	private static final String DEFAULT_VER = "3";
 	private static final String DATE_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
 
 	private static final String[] FIELD_NAME = { "ver", "url", "desc", "aauth",
@@ -56,10 +56,13 @@ public class WebauthRequest implements Serializable {
 
 	private HashMap<String, String> data = new HashMap<String, String>();
 
-	/**
-	 * Default constructor. "ver" defaults to 1, "date" to the current date and
-	 * time.
-	 */
+  /**
+   * Default constructor. "ver" defaults to 3, "date" to the current date and time.
+   * 
+   * Note: Version 3 introduced the concept of non-current members. They are authenticated by
+   * default and therefore the caller should check the WebauthResponse ptags field to distinguish
+   * between current and non-current members.
+   */
 
 	public WebauthRequest() {
 		SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT);
@@ -158,8 +161,8 @@ public class WebauthRequest implements Serializable {
 	 * Returns a string containing the value of the specified field from this
 	 * request
 	 * 
-	 * @param the
-	 *            field to return
+	 * @param field
+	 *            the field to return
 	 * 
 	 * @return the value of the field as a string
 	 */
@@ -174,8 +177,8 @@ public class WebauthRequest implements Serializable {
 	 * Returns an integer value expressing the value of the specified field from
 	 * this request.
 	 * 
-	 * @param the
-	 *            field to return
+	 * @param field
+	 *            the field to return
 	 * 
 	 * @return an integer expressing the value of the request field or -1 if the
 	 *         request doesn't have a field of this name or it was empty
@@ -196,8 +199,8 @@ public class WebauthRequest implements Serializable {
 	 * represents a date. The date is returned as the number of milliseconds
 	 * since January 1, 1970 GMT.
 	 * 
-	 * @param the
-	 *            name of the field to return
+	 * @param field
+	 *            the name of the field to return
 	 * 
 	 * @return an integer expressing the value of the specified request field as
 	 *         a long value that represents a date
@@ -217,8 +220,8 @@ public class WebauthRequest implements Serializable {
 	 * Returns a java.util.Collection containing the comma-seperated strings
 	 * from the specified field from this request
 	 * 
-	 * @param the
-	 *            name of the field to return
+	 * @param field
+	 *            the name of the field to return
 	 * 
 	 * @return a java.utils.Collection containing the comma-seperated strings
 	 *         from the specified request field. Returns an empty collection if
@@ -260,11 +263,6 @@ public class WebauthRequest implements Serializable {
 	 * @return a string representing the request in URL query format
 	 */
 
-	// Note: the deprecated (since 1.4) URLEncoder.encode(String) form
-	// is used here for 1.3 compatibility. Should be
-	// URLEncoder.encode(String,String) throws
-	// UnsupportedEncodingException
-
 	public String toQString() {
 
 		StringBuffer str = new StringBuffer();
@@ -286,5 +284,29 @@ public class WebauthRequest implements Serializable {
 		return str.toString();
 
 	}
+
+  /**
+   * Sets a parameter in this WebauthRequest.
+   * 
+   * This is embedded inside the params field (eg method=PUT). Setting the same parameter name will
+   * overwrite any existing value.
+   * 
+   * Raven will send this back in the WebauthResponse params field.
+   * 
+   * @param paramName the parameter to set
+   */
+  public synchronized void setParam(String paramName, String value) {
+    Collection<String> params = getColl("params");
+
+    // remove any existing method
+    for (Iterator<String> it = params.iterator(); it.hasNext();) {
+      String s = it.next();
+      if (s.startsWith(paramName + "="))
+        it.remove();
+    }
+
+    params.add(paramName + "=" + value);
+    set("params", params);
+  }
 
 }

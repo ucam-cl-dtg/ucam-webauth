@@ -1,7 +1,7 @@
 /* This file is part of the University of Cambridge Web Authentication
  * System Java Toolkit
  *
- * Copyright 2005 University of Cambridge
+ * Copyright 2005,2014 University of Cambridge
  *
  * This toolkit is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -23,6 +23,7 @@
 
 package uk.ac.cam.ucs.webauth;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.ParseException;
@@ -42,20 +43,29 @@ import java.util.TimeZone;
  * @version $Revision: 1.10 $ $Date: 2005/03/31 15:09:19 $
  */
 
-public class WebauthResponse {
+public class WebauthResponse implements Serializable {
+  
+  private static final long serialVersionUID = 7637447443083877684L;
+  
+  // Fields used in protocol versions 1 and 2
+  private static final String[] FIELD_NAMES_12 = {
+      "ver", "status", "msg", "issue", "id", "url", "principal", "auth", "sso", "life", "params",
+      "kid", "sig"};
 
-	// Private data
-
-	private static final String[] FIELD_NAME = { "ver", "status", "msg",
-			"issue", "id", "url", "principal", "auth", "sso", "life", "params",
-			"kid", "sig" };
+  // Fields used in protocol version 3
+  private static final String[] FIELD_NAMES_3 = {
+      "ver", "status", "msg", "issue", "id", "url", "principal", "ptags", "auth", "sso", "life",
+      "params", "kid", "sig"};
 
 	private static final char RESPONSE_SEP = '!';
 	private static final String DATE_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
 
 	private HashMap<String,String> data;
+
+	private String[] fieldNames;
 	private int nFields;
 	private String rawData = "";
+	private String token;
 
 	/**
 	 * Status code representing successfull authentication
@@ -176,26 +186,39 @@ public class WebauthResponse {
 	 * 
 	 * @param token
 	 *            a Response message in string form 
+	 * @throws WebauthException 
 	 */
 
-	public WebauthResponse(String token) {
+	public WebauthResponse(String token) throws WebauthException {
 
 		String[] value = Util.split(RESPONSE_SEP, token);
+		this.token = token;
 
-		// Note: the deprecated (since 1.4) URLEncoder.encode(String)
-		// form is used here for 1.3 compatibility. Should really be
-		// URLEncoder.encode(String,String)
+    // The first field should always be the protocol version number
+    int version;
 
-		nFields = (value.length < FIELD_NAME.length) ? value.length
-				: FIELD_NAME.length;
+    if (value == null || value.length < 1 || value[0].length() == 0)
+      throw new WebauthException("Error: response does not specify a protocol version");
+
+    try {
+      version = Integer.parseInt(value[0]);
+      if (version <= 0)
+        throw new WebauthException("Error: invalid protocol version - " + version);
+    } catch (NumberFormatException e) {
+      throw new WebauthException("Error: protocol version is not a valid integer", e);
+    }
+
+    fieldNames = version < 3 ? FIELD_NAMES_12 : FIELD_NAMES_3;
+    nFields = (value.length < fieldNames.length) ? value.length : fieldNames.length;
 		data = new HashMap<String,String>(nFields);
-		for (int i = 0; i < nFields; ++i)
+		for (int i = 0; i < nFields; ++i) {
 			try {
-				data.put(FIELD_NAME[i],URLDecoder.decode(value[i],"UTF-8"));
+				data.put(fieldNames[i],URLDecoder.decode(value[i],"UTF-8"));
 			} catch (UnsupportedEncodingException e) {
 				// Shouldn't happen
 				throw new Error("Unable to use encoding UTF-8");
 			}
+		}
 
 		int ultimate = token.lastIndexOf(RESPONSE_SEP);
 		int penultimate = token.lastIndexOf(RESPONSE_SEP, ultimate - 1);
@@ -314,8 +337,8 @@ public class WebauthResponse {
 
 	public Collection<String> getColl(String field) {
 		HashSet<String> set = new HashSet<String>();
-		for (String token : Util.split(',',get(field))) {
-			set.add(token.trim());
+		for (String item : Util.split(',',get(field))) {
+			set.add(item.trim());
 		}
 		return set;
 	}
@@ -330,7 +353,16 @@ public class WebauthResponse {
 
 	public String getRawData() {
 		return rawData;
-	}
+  }
+
+  /**
+   * Returns the original Raven token that this response object was created from.
+   * 
+   * @return the response string from the Raven server.
+   */
+  public String getToken() {
+    return token;
+  }
 
 	/**
 	 * Returns a human-readable string representation this response mesage
@@ -341,12 +373,42 @@ public class WebauthResponse {
 	@Override
 	public String toString() {
 		StringBuffer str = new StringBuffer("Webauth response: ");
-		for (int i = 0; i < FIELD_NAME.length; ++i) {
+		for (int i = 0; i < fieldNames.length; ++i) {
 			if (i != 0)
 				str.append(", ");
-			str.append(FIELD_NAME[i] + ": " + get(FIELD_NAME[i]));
+			str.append(fieldNames[i] + ": " + get(fieldNames[i]));
 		}
 		return str.toString();
 	}
+
+  /**
+   * Gets a parameter value stored within the params field.
+   * 
+   * Returns: The parameter value if found. An empty string if the parameter name exists without a
+   * value. Null if the parameter does not exist.
+   */
+  String getParam(String paramName) {
+    if (paramName == null || paramName.length() == 0)
+      return null;
+
+    Collection<String> params = getColl("params");
+    if (params == null)
+      return null;
+
+    // remove any existing method
+    for (String s : params) {
+
+      String[] tokens = s.split("=", 2);
+
+      if (paramName.equals(tokens[0])) {
+        if (tokens.length >= 2)
+          return tokens[1];
+        else
+          return "";// parameter present but no value
+      }
+    }
+
+    return null;
+  }
 
 }

@@ -11,8 +11,6 @@ authentication requests and responses (WebauthRequest and
 WebauthResponse respectively), and a class for validating response
 messages (WebauthValidator).
 
-The Toolkit is intended to be compatible with Java 1.3 and above.
-
 
 The Latest Version
 ------------------
@@ -56,10 +54,6 @@ freshly-compiled class files beneath the directory 'target/classes'. Other Maven
 goals will run the provided JUnit tests, rebuild the JAR file and
 rebuild the distribution jar files.
 
-Some deprecation and other warnings can be expected when the toolkit
-is compiled under versions of Java later than 1.3 due to the need to
-maintain backwards compatibility.
-
 
 Questions
 ---------
@@ -72,7 +66,7 @@ Questions about the use of this toolkit should be addressed to
 Licencing
 ---------
 
-Copyright (c) University of Cambridge 2005
+Copyright (c) University of Cambridge 2005,2014
 
 This toolkit is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as

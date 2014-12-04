@@ -1,7 +1,7 @@
 /* This file is part of the University of Cambridge Web Authentication
  * System Java Toolkit
  *
- * Copyright 2005 University of Cambridge
+ * Copyright 2005,2014 University of Cambridge
  *
  * This toolkit is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -44,7 +44,7 @@ import java.util.Date;
 
 public class WebauthValidator {
 
-	private static final int MAX_VER = 2;
+	private static final int MAX_VER = 3;
 	private static final String SIGNATURE_SCHEME = "SHA1withRSA";
 
 	private static final int DEFAULT_TIMEOUT = 30000;
@@ -176,22 +176,21 @@ public class WebauthValidator {
 	public void validate(WebauthRequest request, WebauthResponse response,
 			long date) throws WebauthException {
 
-	  // If these checks fail then this is a bug but better to be explicit about what failed
 	  if (null == request) {
-	    throw new NullPointerException("Null WebauthRequest");
+	    throw new WebauthException("Missing WebauthRequest information");
 	  }
 	  if (null == response) {
-	    throw new NullPointerException("Null WebauthResponse");
+	    throw new WebauthException("Missing WebauthResponse information");
 	  }
-		check_parameters(response);
-		check_protocol(request, response);
-		check_url(request, response);
-		check_status(response);
-		check_time(response, date);
-		check_iact(request, response);
-		check_aauth(request, response);
-		check_sig(response);
+    check_parameters(response);
+    check_status(response);
+    check_time(response, date);
+    check_sig(response);
 
+    check_protocol(request, response);
+    check_url(request, response);
+    check_iact(request, response);
+    check_aauth(request, response);
 	}
 
 	private void check_parameters(WebauthResponse response)
@@ -247,13 +246,37 @@ public class WebauthValidator {
 			throws WebauthException {
 
 		String requestURL = request.get("url");
-		String responseURL = response.get("url");
-		if (!responseURL.startsWith(requestURL)) {
-			throw new WebauthException("URL in response (" + responseURL
-					+ ") does not match expected URL (" + requestURL + ")");
-		}
 
-	}
+    // The url sent back inside the WLS-Response.
+    String responseURL = response.get("url");
+    // The responseURL is stored in a decoded state which will have converted + into a space.
+    // Lets also do this for the comparison.
+    //
+    // >> Ideally we would have written a Raven specific decoder based on a modified copy of
+    // >> java.net.ULRDecoder but the licensing might be a problem.
+    requestURL = requestURL.replace("+", " ");
+
+    if ("1".equals(response.get("ver"))) {
+      // Version 1 protocol responds without the query string.
+
+      // remove any query strings for comparison
+      requestURL = requestURL.replaceFirst("[?].*", "");
+      responseURL = responseURL.replaceFirst("[?].*", "");
+
+      if (!responseURL.startsWith(requestURL)) {
+        throw new WebauthException("URL in response (" + responseURL
+            + ") does not match expected URL (" + requestURL + ")");
+      }
+    } else {
+      // Version 2+. Do any exact match on the url.
+      if (!requestURL.equals(responseURL)) {
+        throw new WebauthException("URL in response (" + responseURL
+            + ") does not match expected URL (" + requestURL + ")");
+      }
+
+    }
+
+  }
 
 	private void check_status(WebauthResponse response) throws WebauthException {
 

@@ -1,7 +1,7 @@
 /* This file is part of the University of Cambridge Web Authentication
  * System Java Toolkit
  *
- * Copyright 2005 University of Cambridge
+ * Copyright 2005,2014 University of Cambridge
  *
  * This toolkit is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License

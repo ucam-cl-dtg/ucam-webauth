@@ -2,7 +2,17 @@ University of Cambridge Web Authentication System Java Toolkit
 
                                  CHANGELOG
 
-$Id: CHANGES,v 1.7 2005/09/19 09:11:14 jw35 Exp $
+$Id: CHANGES,v 1.8 2007-03-18 19:04:11 jw35 Exp $
+
+0.7-20141203 JW
+
+* Added support for v3 of the Ucam WebAuth protocol:
+    * Added basic v3 support
+    * Modified validator rules - v1 url validation allows the response
+      url if it is a prefix of the request url. v2 and up must match
+      exactly.
+    * Improved the code formatting, specifically the whitespacing with
+      tabs replaced with spaces.
 
 0.6-20051129 JW
 

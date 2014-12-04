@@ -1,7 +1,7 @@
 /* This file is part of the University of Cambridge Web Authentication
  * System Java Toolkit
  *
- * Copyright 2005 University of Cambridge
+ * Copyright 2005,2014 University of Cambridge
  *
  * This toolkit is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -36,10 +36,32 @@ import java.util.TimeZone;
 
 import junit.framework.TestCase;
 
+/**
+ * Test cases for the webauth protocol.
+ * 
+ * The protocol is documented at: 
+ * 
+ *   http://raven.cam.ac.uk/project/waa2wls-protocol.txt
+ * 
+ * Note: Below are many static-final webauth response messages. The following
+ * Raven debug page is useful for creating additional responses:
+ * 
+ *   http://raven.cam.ac.uk/test.html
+ *   
+ */
+
 public class WebauthValidatorTest extends TestCase {
 
     private static int TEST_TIMEOUT = 30000;
-    private static int TEST_MAX_SKEW = 0;
+   // private static int TEST_MAX_SKEW = 0;
+
+  /** response contains: auth=pwd */
+  private static final String RESPONSE_V3_FIRSTHAND =
+      "3!200!!20141110T150922Z!1415632162-15831-14!http://raven.cam.ac.uk/d"
+          + "ebug.html!pms52!current!!pwd!42298!!2!vbyiHj1hqKxXW4n3gOXCagoBuJqb-7"
+          + "TsRQUSo0S-SyjSlGyu7OJxsEr9-b1765AzLZD7eK1kjbUcnn0XCa.mrwshZgsq9nVfq-"
+          + "ZGoWFX7t1cOyQDhx3duI2jRB7PvA4pppfULQpBnCYa5hp03a4E.dGiOctVf6I6xW6S3E"
+          + "5uMSk_";
 
     private static final String RESPONSE_V2_FIRSTHAND = 
 	"2!200!!20050317T151310Z!1111072390-26663-9!http://raven.cam.ac.uk/d" +
@@ -47,6 +69,14 @@ public class WebauthValidatorTest extends TestCase {
 	"PDmRP2krjGjUylpkh9rdnK1knnf1z8P4JWDVQxsMKilnXfPZ-D9G-arghDd-Hgr9JTC" +
 	"gnbttwikvL.yYAHvUCnhBY75QCRmBPZ1iQQcKdh2gzxX-HsJhmZ4uTn0vce4IlLFdQL" +
 	"CbALj1nqw_";
+
+  /** response contains: auth= sso=pwd */
+  private static final String RESPONSE_V3_SSO =
+      "3!200!!20141110T164620Z!1415637980-22212-8!http://raven.cam.ac.uk/d"
+          + "ebug.html!pms52!current!!pwd!36480!!2!vWv9FKPhVXJw-lxuHJEBBM7j3F30j"
+          + "isxy1FIgJw-LL1Vf6ZNKWSmdAaBaJsKyjMT80UZXhoSDyGP8iE1TDFz71P-r2XjvKl4"
+          + "E8NHfKUUyXpDdI-JS97LVOEwCOivYmuRCI0iePevxxUku11-VlPPTv8qKZnHJG40TPI"
+          + "UKU80VuM_";
 
     private static final String RESPONSE_V2_SSO =
 	"2!200!!20050317T151424Z!1111072462-26473-5!http://raven.cam.ac.uk/d" +
@@ -167,12 +197,11 @@ public class WebauthValidatorTest extends TestCase {
 
 
 	private WebauthRequest request;
-	private WebauthResponse response_v2_firsthand, response_v2_sso,
-			response_v1, response_error, response_forged, response_summer;
-	@SuppressWarnings("unused")
-	private long response_v2_firsthand_date, response_v2_sso_date,
-			response_v1_date, response_error_date, response_forged_date,
-			response_summer_date;
+  private WebauthResponse response_v3_firsthand, response_v2_firsthand,
+      response_v2_sso, response_v1, response_error, response_forged, response_summer;
+  private long response_v3_firsthand_date, response_v2_firsthand_date,
+      response_v2_sso_date, response_v1_date, response_error_date, response_forged_date,
+      response_summer_date;
 	private WebauthValidator validator;
 
 	// ----------------------------------------------------------- Housekeeping
@@ -198,6 +227,9 @@ public class WebauthValidatorTest extends TestCase {
 		request.set("url", "http://raven.cam.ac.uk/debug.html");
 
 		// Some responses
+
+    response_v3_firsthand = new WebauthResponse(RESPONSE_V3_FIRSTHAND);
+    response_v3_firsthand_date = response_v3_firsthand.getDate("issue");
 
 		response_v2_firsthand = new WebauthResponse(RESPONSE_V2_FIRSTHAND);
 		response_v2_firsthand_date = response_v2_firsthand.getDate("issue");
@@ -250,14 +282,18 @@ public class WebauthValidatorTest extends TestCase {
 	// Basic tests - accept a valid response, reject a forged one
 
 	public void testDefaults() {
-		assertEquals(30000, validator.getTimeout());
+		assertEquals(TEST_TIMEOUT, validator.getTimeout());
 		assertEquals(500, validator.getMaxSkew());
 		assertEquals("webauth-pubkey", validator.getKeyPrefix());
 	}
 
 	public void testBasic() throws WebauthException {
-		validator.validate(request, response_v2_firsthand,
-				response_v2_firsthand_date);
+
+    request.set("ver", 2);
+    validator.validate(request, response_v2_firsthand, response_v2_firsthand_date);
+
+    request.set("ver", 3);
+    validator.validate(request, response_v3_firsthand, response_v3_firsthand_date);
 	}
 
 	public void testForged() {
@@ -272,21 +308,21 @@ public class WebauthValidatorTest extends TestCase {
 
 	// Various parameter errors
 
-	public void testMissVer() throws WebauthException, ParseException {
-		WebauthResponse r = new WebauthResponse(MISS_VER);
+	public void testMissVer() {
 		try {
+		  WebauthResponse r = new WebauthResponse(MISS_VER);
 			validator.validate(request, r, r.getDate("issue"));
 			fail("Didn't detect missing protocol version number");
 		} catch (WebauthException e) {
 			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
-					+ "Protocol version number missing from response",
+					+ "Error: response does not specify a protocol version",
 					e.toString());
 		}
 	}
 
-	public void testBadVer() throws WebauthException, ParseException {
-		WebauthResponse r = new WebauthResponse(BAD_VER);
+	public void testBadVer() {
 		try {
+		  WebauthResponse r = new WebauthResponse(BAD_VER);
 			validator.validate(request, r, r.getDate("issue"));
 			fail("Didn't detect bad protocol version number");
 		} catch (WebauthException e) {
@@ -294,7 +330,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testMissStatus() throws WebauthException, ParseException {
+	public void testMissStatus() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(MISS_STATUS);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -305,7 +341,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testSmallStatus() throws WebauthException, ParseException {
+	public void testSmallStatus() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(SMALL_STATUS);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -316,7 +352,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testMissID() throws WebauthException, ParseException {
+	public void testMissID() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(MISS_ID);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -327,7 +363,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testMissURL() throws WebauthException, ParseException {
+	public void testMissURL() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(MISS_URL);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -338,7 +374,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testMissPrincipal() throws WebauthException, ParseException {
+	public void testMissPrincipal() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(MISS_PRINCIPAL);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -350,7 +386,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testNoAuthSSO() throws WebauthException, ParseException {
+	public void testNoAuthSSO() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(NO_AUTH_SSO);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -362,7 +398,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testBadAuthSSO() throws WebauthException, ParseException {
+	public void testBadAuthSSO() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(BAD_AUTH_SSO);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -374,7 +410,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testMissKId() throws WebauthException, ParseException {
+	public void testMissKId() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(MISS_KID);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -386,7 +422,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testBadKId() throws WebauthException, ParseException {
+	public void testBadKId() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(BAD_KID);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -398,7 +434,7 @@ public class WebauthValidatorTest extends TestCase {
 		}
 	}
 
-	public void testMissSig() throws WebauthException, ParseException {
+	public void testMissSig() throws WebauthException {
 		WebauthResponse r = new WebauthResponse(MISS_SIG);
 		try {
 			validator.validate(request, r, r.getDate("issue"));
@@ -427,37 +463,79 @@ public class WebauthValidatorTest extends TestCase {
 
 	// Test URL matching
 
-	public void testURL() throws WebauthException, MalformedURLException {
+  public void testURL() throws WebauthException {
 
-		request.set("url", "http://raven.cam.ac.uk/");
-		validator.validate(request, response_v2_firsthand,
-				response_v2_firsthand_date);
+    // request url starts as: http://raven.cam.ac.uk/debug.html
+    // response_v2_firsthand has the same url: http://raven.cam.ac.uk/debug.html
 
-		request.set("url", "http://raven.cam.ac.uk/debug.html?foobar");
-		try {
-			validator.validate(request, response_v2_firsthand,
-					response_v2_firsthand_date);
-			fail("Didn't detect short URL in response");
-		} catch (WebauthException e) {
-			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
-					+ "URL in response (http://raven.cam.ac.uk/debug.htm"
-					+ "l) does not match expected URL (http://raven.cam."
-					+ "ac.uk/debug.html?foobar)", e.toString());
-		}
+    /*
+     * Test v1 protocol.
+     */
+    request.set("ver", 1);
+    request.set("url", "http://raven.cam.ac.uk/debug.html");
+    validator.validate(request, response_v1, response_v1_date);
 
-		request.set("url", "http://a.b/c.d/");
-		try {
-			validator.validate(request, response_v2_firsthand,
-					response_v2_firsthand_date);
-			fail("Didn't detect different URL in response");
-		} catch (WebauthException e) {
-			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
-					+ "URL in response (http://raven.cam.ac.uk/debug.htm"
-					+ "l) does not match expected URL (http://a.b/c.d/)",
-					e.toString());
-		}
+    // in v1, the response url should start with the request url.
 
-	}
+    request.set("url", "http://raven.cam.ac.uk/");
+    validator.validate(request, response_v1, response_v1_date);
+
+    // check for shorter response.
+    request.set("url", "http://raven.cam.ac.uk/debug.htmlextra");
+    try {
+      validator.validate(request, response_v1, response_v1_date);
+      fail("Didn't detect short URL in response");
+    } catch (WebauthException e) {
+      // correct response
+    }
+    // Check behaviour of query string.
+    // Same host and path should validate, query string can change.
+    request.set("url", "http://raven.cam.ac.uk/debug.html?foo=bar");
+    validator.validate(request, response_v1, response_v1_date);
+
+    // check for different url
+    request.set("url", "http://a.b/c.d/");
+    try {
+      validator.validate(request, response_v1, response_v1_date);
+      fail("Didn't detect different URL in response");
+    } catch (WebauthException e) {
+      // correct response
+    }
+
+    /*
+     * Test v2 protocol.
+     */
+
+    request.set("ver", 2);
+
+    request.set("url", "http://raven.cam.ac.uk/debug.html");
+    validator.validate(request, response_v2_firsthand, response_v2_firsthand_date);
+
+    // in v2, the response url should be an exact match of the request url.
+    request.set("url", "http://raven.cam.ac.uk/");
+    try {
+      validator.validate(request, response_v2_firsthand, response_v2_firsthand_date);
+      fail("Didn't detect different URL in response");
+    } catch (WebauthException e) { /* correct response */
+    }
+
+    // check adding a query string fails.
+    request.set("url", "http://raven.cam.ac.uk/debug.html?foo=bar");
+    try {
+      validator.validate(request, response_v2_firsthand, response_v2_firsthand_date);
+      fail("Didn't detect different URL in response");
+    } catch (WebauthException e) { /* correct response */
+    }
+
+    // check for different url
+    request.set("url", "http://a.b/c.d/");
+    try {
+      validator.validate(request, response_v2_firsthand, response_v2_firsthand_date);
+      fail("Didn't detect different URL in response");
+    } catch (WebauthException e) { /* correct response */
+    }
+
+  }
 
 	// Test status code handling
 
@@ -508,7 +586,7 @@ public class WebauthValidatorTest extends TestCase {
 
 	public void testTimeout() throws WebauthException {
 
-		final int TIMEOUT = 30000;
+		final int TIMEOUT = TEST_TIMEOUT;
 
 		validator.setTimeout(TIMEOUT);
 		validator.setMaxSkew(0);
@@ -581,7 +659,7 @@ public class WebauthValidatorTest extends TestCase {
 
 	public void testTimeoutAndSkew() throws WebauthException {
 
-		final int TIMEOUT = 30000;
+		final int TIMEOUT = TEST_TIMEOUT;
 		final int SKEW = 120000;
 
 		validator.setTimeout(TIMEOUT);
@@ -650,22 +728,38 @@ public class WebauthValidatorTest extends TestCase {
 
 	// Test iact handling
 
-	public void testIact() throws WebauthException {
+  @SuppressWarnings("null")// can't be null as for loop only matches switch statement
+  public void testIact() throws WebauthException {
 
-		request.set("iact", "yes");
+    for (int v = 2; v <= 3; v++) {
+      WebauthRequest req;
+      WebauthResponse resp = null;
 
-		validator.validate(request, response_v2_firsthand,
-				response_v2_firsthand_date);
+      req = new WebauthRequest();
+      req.set("url", "http://raven.cam.ac.uk/debug.html");
+      req.set("iact", "yes");
 
-		try {
-			validator.validate(request, response_v2_sso, response_v2_sso_date);
-			fail("Didn't detect unacceptable iact requirements");
-		} catch (WebauthException e) {
-			assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
-					+ "First-hand authentication required but not "
-					+ "supplied", e.toString());
-		}
-	}
+      switch (v) {
+        case 2:
+          resp = new WebauthResponse(RESPONSE_V2_SSO);
+          break;
+        case 3:
+          resp = new WebauthResponse(RESPONSE_V3_SSO);
+          break;
+      }
+
+      assertNotNull(resp);
+
+      try {
+        validator.validate(req, resp, resp.getDate("issue"));
+        fail("Didn't detect unacceptable iact requirements for version " + v);
+      } catch (WebauthException e) {
+        assertEquals("uk.ac.cam.ucs.webauth.WebauthException: "
+            + "First-hand authentication required but not " + "supplied", e.toString());
+      }
+
+    }
+  }
 
 	// Test aauth handling
 

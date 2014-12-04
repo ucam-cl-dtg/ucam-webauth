@@ -310,15 +310,15 @@ public class RavenFilter implements Filter {
 	 */
 	protected KeyStore getKeyStore() {
 		// init a new keystore with the Raven certificate,
-		KeyStore keyStore;
+		KeyStore newKeyStore;
 		try {
-			keyStore = KeyStore.getInstance("JKS");
-			keyStore.load(null, new char[] {}); // Null InputStream, no password
+			newKeyStore = KeyStore.getInstance("JKS");
+			newKeyStore.load(null, new char[] {}); // Null InputStream, no password
 			CertificateFactory factory = CertificateFactory
 					.getInstance("X.509");
 			Certificate cert = factory.generateCertificate(new FileInputStream(
 					sCertRealPath));
-			keyStore.setCertificateEntry(DEFAULT_KEYNAME, cert);
+			newKeyStore.setCertificateEntry(DEFAULT_KEYNAME, cert);
 		} catch (KeyStoreException e) {
 			log.error("Unable to setup KeyStore", e);
 			throw new RuntimeException(e);
@@ -336,14 +336,13 @@ public class RavenFilter implements Filter {
 			throw new RuntimeException(e);
 		}
 
-		return keyStore;
+		return newKeyStore;
 
 	}
 
 	/**
 	 * Gets a WebauthValidator and initialises if necessary.
 	 * 
-	 * @return
 	 */
 	protected WebauthValidator getWebauthValidator() {
 		if (webauthValidator == null) {
@@ -476,9 +475,10 @@ public class RavenFilter implements Filter {
 		 * have expired, thus removing the stored state)
 		 */
 		if (wlsResponse != null && wlsResponse.length() > 0) {
-			WebauthResponse webauthResponse = new WebauthResponse(wlsResponse);
-			session.setAttribute(WLS_RESPONSE_PARAM, webauthResponse);
+		  WebauthResponse webauthResponse = null;
 			try {
+			  webauthResponse = new WebauthResponse(wlsResponse);
+	      session.setAttribute(WLS_RESPONSE_PARAM, webauthResponse);
 				log.debug("Validating received response with stored request");
 				if (storedRavenReq == null) {
 					response.sendError(500,
@@ -513,12 +513,17 @@ public class RavenFilter implements Filter {
 			} catch (WebauthException e) {
 				log.debug("Response validation failed - " + e.getMessage());
 				try {
-					int status = webauthResponse.getInt("status");
-					if (status > 0)
-						response.sendError(status, e.getMessage());
-					else
-						response.sendError(500, "Response validation failed - "
-								+ e.getMessage());
+				  // If we can get hold of a status
+          if (webauthResponse != null) {
+            int status = webauthResponse.getInt("status");
+            if (status > 0) {
+              response.sendError(status, e.getMessage());
+              return;
+            }
+          }
+          // Use a default status
+          response.sendError(500, "Response validation failed - " + e.getMessage());
+          return;
 				} catch (Exception e2) {
 					response.sendError(500,
 							"Response validation failed - " + e.getMessage());
