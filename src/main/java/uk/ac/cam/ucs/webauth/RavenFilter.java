@@ -208,6 +208,13 @@ public class RavenFilter implements Filter {
 	public static String INIT_PARAM_AUTHENTICATE_URL = "authenticateUrl";
 
 	/**
+	 * Override of default max skew - in case there is lag in the clocks.
+	 * Measured in milliseconds.
+	 * Defaults to 0ms.
+	 */
+	public static String INIT_PARAM_MAX_SKEW = "maxSkew";
+
+	/**
 	 * The filter init-param param-name path to the certificate. Optional.
 	 * Defaults to /WEB-INF/raven/pubkey2.crt
 	 */
@@ -244,6 +251,13 @@ public class RavenFilter implements Filter {
 	 */
 	private String sRavenAuthenticatePage = "https://raven.cam.ac.uk/auth/authenticate.html";
 
+	/**
+	* Override for max skew. Optional.
+	* 
+	* Defaults to null.
+	*/
+	private Integer maxSkew = null;
+
 	/** KeyStore used by WebauthValidator class */
 	protected KeyStore keyStore = null;
 
@@ -263,6 +277,12 @@ public class RavenFilter implements Filter {
 				.getInitParameter(INIT_PARAM_AUTHENTICATE_URL);
 		if (authenticatePage != null)
 			sRavenAuthenticatePage = authenticatePage;
+
+		// checks if the init-param is set, and if so overrides max skew. 
+		String maxSkew = config
+		    .getInitParameter(INIT_PARAM_MAX_SKEW);
+		if (maxSkew != null)
+		  this.maxSkew = Integer.parseInt(maxSkew);
 
 		// get the path to the raven certificate or use a default
 		String sCertContextPath = config
@@ -347,6 +367,9 @@ public class RavenFilter implements Filter {
 	protected WebauthValidator getWebauthValidator() {
 		if (webauthValidator == null) {
 			webauthValidator = new WebauthValidator(getKeyStore());
+			if (this.maxSkew != null) {
+				webauthValidator.setMaxSkew(this.maxSkew);
+			}
 		}
 		return webauthValidator;
 	}
